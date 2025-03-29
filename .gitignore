@@ -1,0 +1,28 @@
+# General
+.DS_Store
+node_modules/
+dist/
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Frontend specific
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+/frontend/coverage/
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+
+# Backend specific
+/backend/target/
+/backend/.mvn/
+/backend/build/
+/backend/*.log
+/backend/*.iml
+/backend/.idea/
+/backend/out/
+/backend/.gradle/
