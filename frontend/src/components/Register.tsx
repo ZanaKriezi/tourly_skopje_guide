@@ -3,7 +3,7 @@ import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { AxiosError } from 'axios';
-import { RegisterRequest } from '../services/api';
+import { RegisterRequest } from '../types/auth';
 
 interface RegisterFormData extends RegisterRequest {
   confirmPassword: string;

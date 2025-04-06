@@ -1,16 +1,6 @@
-// src/context/AuthContext.tsx
 import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
-import ApiService, { RegisterRequest } from '../services/api';
-
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  token: string;
-  name?: string;
-  surname?: string;
-}
+import ApiService from '../services/api';
+import { User, RegisterRequest } from '../types/auth';
 
 interface AuthContextType {
   user: User | null;
@@ -42,7 +32,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Check if user is already logged in
-    const currentUser = ApiService.getCurrentUser();
+    const currentUser = ApiService.auth.getCurrentUser();
     if (currentUser) {
       setUser({
         id: currentUser.id,
@@ -58,22 +48,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (username: string, password: string): Promise<void> => {
-    const data = await ApiService.login(username, password);
+    const data = await ApiService.auth.login(username, password);
     setUser({
       id: data.id,
       username: data.username,
       email: data.email,
       role: data.role,
       token: data.token,
+      name: data.name,
+      surname: data.surname,
     });
   };
 
   const register = async (registerData: RegisterRequest): Promise<void> => {
-    await ApiService.register(registerData);
+    await ApiService.auth.register(registerData);
   };
 
   const logout = (): void => {
-    ApiService.logout();
+    ApiService.auth.logout();
     setUser(null);
   };
 
