@@ -36,4 +36,18 @@ public class Place {
 
     @ManyToMany(mappedBy = "places")
     private List<Tour> tours = new ArrayList<>();
+
+    // Default constructor required by JPA
+    public Place() {
+    }
+
+    // Constructor for bootstrapping data
+    public Place(String name, String address, String description, PlaceType placeType, Float averageRating, String sentimentTag) {
+        this.name = name;
+        this.address = address;
+        this.description = description;
+        this.placeType = placeType;
+        this.averageRating = averageRating;
+        this.sentimentTag = sentimentTag;
+    }
 }
