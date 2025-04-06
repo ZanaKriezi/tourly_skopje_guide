@@ -1,10 +1,13 @@
+// src/components/HomePage.tsx
 import React, { useState, useEffect } from 'react';
 import ApiService from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const HomePage: React.FC = () => {
   const [connectionStatus, setConnectionStatus] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     const checkConnection = async () => {
@@ -23,17 +26,6 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="bg-primary text-white p-4 shadow-md">
-        <div className="container mx-auto flex justify-between items-center">
-          <h1 className="font-montserrat text-2xl font-bold">Skopje Tourism Guide</h1>
-          <div className="flex space-x-4">
-            <button className="bg-white text-primary px-4 py-2 rounded font-poppins hover:bg-gray-100 transition-colors">Sign In</button>
-            <button className="bg-accent text-white px-4 py-2 rounded font-poppins hover:bg-opacity-90 transition-colors">Register</button>
-          </div>
-        </div>
-      </header>
-
       {/* Hero Section */}
       <section className="container mx-auto py-12 px-4">
         <div className="bg-white rounded-lg shadow-lg p-8 max-w-4xl mx-auto">
@@ -81,14 +73,20 @@ const HomePage: React.FC = () => {
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="font-poppins text-xl font-semibold text-primary mb-3">Personalized Tours</h3>
             <p className="font-inter text-text">
-              Get AI-generated tour recommendations based on your preferences and budget.
+              {isAuthenticated 
+                ? "Create your own custom tours based on your preferences and budget."
+                : "Get AI-generated tour recommendations based on your preferences and budget."
+              }
             </p>
           </div>
           
           <div className="bg-white p-6 rounded-lg shadow-md">
             <h3 className="font-poppins text-xl font-semibold text-primary mb-3">User Reviews</h3>
             <p className="font-inter text-text">
-              Read and leave reviews about places you visit in Skopje.
+              {isAuthenticated 
+                ? "Read and leave reviews about places you visit in Skopje."
+                : "Read reviews about places in Skopje from other travelers."
+              }
             </p>
           </div>
         </div>
