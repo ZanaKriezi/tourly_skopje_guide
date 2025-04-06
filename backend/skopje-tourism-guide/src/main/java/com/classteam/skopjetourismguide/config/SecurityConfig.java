@@ -2,6 +2,7 @@ package com.classteam.skopjetourismguide.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -16,8 +17,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()  // Allow access to all endpoints
-                )
-                .cors();  // Enable CORS
+                )// added withDefaults() because of an error and couldn't compile
+                .cors( Customizer.withDefaults ());  // Enable CORS
 
         return http.build();
     }
