@@ -1,19 +1,20 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
-import Header from './components/layout/Header';
+import Navbar from './components/layout/Navbar';
+import Footer from './components/layout/Footer';
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
-import './App.css';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import './App.css';
 
 const App: React.FC = () => {
   return (
     <Router>
       <AuthProvider>
         <div className="App min-h-screen flex flex-col bg-background">
-          <Header />
+          <Navbar />
           <div className="flex-grow">
             <Routes>
               {/* Public Routes */}
@@ -34,6 +35,7 @@ const App: React.FC = () => {
               </Route>
             </Routes>
           </div>
+          <Footer />
         </div>
       </AuthProvider>
     </Router>

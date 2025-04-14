@@ -1,15 +1,33 @@
 import { BaseEntity } from './common';
 
+export enum PlaceType {
+  HISTORICAL = 'HISTORICAL',
+  MUSEUMS = 'MUSEUMS',
+  NATURE = 'NATURE',
+  PARKS = 'PARKS',
+  LANDMARKS = 'LANDMARKS',
+  RESTAURANT = 'RESTAURANT',
+  CAFE_BAR = 'CAFE_BAR',
+  MALL = 'MALL'
+}
+
 export interface Place extends BaseEntity {
   name: string;
   description: string;
-  category: string;
+  placeType: PlaceType;
+  address: string;
+  phoneNumber?: string;
+  websiteURL?: string;
+  socialMedia?: string;
   imageUrl?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-  rating?: number;
-  priceLevel?: number;
+  averageRating: number;
+  sentimentTag?: string;
+}
+
+export interface PlaceFilter {
+  type?: PlaceType;
+  query?: string;
+  minRating?: number;
 }
 
 export interface UserProfile extends BaseEntity {
