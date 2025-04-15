@@ -33,6 +33,8 @@ const Header: React.FC = () => {
             </>
           ) : (
             <>
+            // In your Header component
+              <Link to="/map" className="your-link-classes">Skopje Map</Link>
               <Link 
                 to="/login" 
                 className="bg-white text-primary px-4 py-2 rounded font-poppins hover:bg-gray-100 transition-colors"
