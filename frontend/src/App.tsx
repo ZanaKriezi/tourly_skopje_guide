@@ -12,7 +12,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 
 const App: React.FC = () => {
   // Your Google Maps API key - store this in an environment variable for security
-  const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || 'YOUR_GOOGLE_MAPS_API_KEY';
+  const googleMapsApiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || 'AIzaSyCJIYdrnrRp1x3d-nQOLTVA5v940bTjUT4';
 
   return (
     <Router>
