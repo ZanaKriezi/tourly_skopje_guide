@@ -8,6 +8,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 
+/**
+ * Controller for handling Google Maps API related requests.
+ * Provides endpoints for places, geocoding, and directions in Skopje.
+ */
+
 @RestController
 @RequestMapping("/api/maps")
 @CrossOrigin(origins = "*")
@@ -19,6 +24,7 @@ public class GoogleMapsController {
     public GoogleMapsController(GoogleMapsService googleMapsService) {
         this.googleMapsService = googleMapsService;
     }
+
 
     @GetMapping("/places")
     public ResponseEntity<Map<String, Object>> getPlacesInSkopje(
