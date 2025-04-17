@@ -70,7 +70,7 @@ const LoginForm: React.FC = () => {
         fullWidth
         isLoading={isLoading}
       >
-        Sign In
+        Log In
       </Button>
     </form>
   );

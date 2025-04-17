@@ -17,7 +17,7 @@ const FeaturedPlaces: React.FC<FeaturedPlacesProps> = ({
   title,
   subtitle,
   places,
-  limit = 6,
+  limit = 3,
   showViewAll = true,
   activeCategory
 }) => {
@@ -43,7 +43,7 @@ const FeaturedPlaces: React.FC<FeaturedPlacesProps> = ({
         
         {displayedPlaces.length > 0 ? (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {displayedPlaces.map(place => (
                 <PlaceCard key={place.id} place={place} />
               ))}

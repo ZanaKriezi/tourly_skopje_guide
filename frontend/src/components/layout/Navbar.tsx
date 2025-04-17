@@ -45,8 +45,9 @@ const Navbar: React.FC = () => {
   
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-primary bg-opacity-95 shadow-md' : 'bg-transparent'
+      isScrolled || location.pathname.startsWith('/places') ? 'bg-primary bg-opacity-95 shadow-md' : 'bg-transparent'
     }`}>
+    
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           {/* Logo and Brand */}
@@ -87,7 +88,7 @@ const Navbar: React.FC = () => {
                       size="sm"
                       className="text-black border-white hover:bg-white hover:bg-opacity-10"
                     >
-                      Sign In
+                      Log In
                     </Button>
                   </Link>
                   <Link to="/register">
@@ -162,7 +163,7 @@ const Navbar: React.FC = () => {
                       fullWidth
                       className="text-white border-white hover:bg-white hover:bg-opacity-10"
                     >
-                      Sign In
+                      Log In
                     </Button>
                   </Link>
                   <Link to="/register" onClick={closeMenu}>

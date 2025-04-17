@@ -8,6 +8,8 @@ import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MapPage from './pages/MapPage';
+import PlacesPage from './pages/PlacesPage';
+import PlaceDetailsPage from './pages/PlaceDetailsPage';
 import './App.css';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -27,7 +29,9 @@ const App: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/map" element={<MapPage apiKey={googleMapsApiKey} />} />
-              
+              <Route path="/places" element={<PlacesPage />} />
+              <Route path="/places/:id" element={<PlaceDetailsPage />} />
+
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
                 {/* Add protected routes here */}
