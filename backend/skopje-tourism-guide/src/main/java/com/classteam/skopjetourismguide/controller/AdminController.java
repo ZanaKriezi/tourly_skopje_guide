@@ -1,4 +1,4 @@
-package com.classteam.skopjetourismguide.web.rest;
+package com.classteam.skopjetourismguide.controller;
 
 import com.classteam.skopjetourismguide.service.PlaceSchedulingService;
 import org.springframework.beans.factory.annotation.Autowired;

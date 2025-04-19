@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -16,7 +15,6 @@ import java.util.Optional;
 
 @Service
 @Slf4j
-@Transactional
 public class PlaceSchedulingService {
 
     private final GoogleMapsService googleMapsService;
@@ -24,64 +22,7 @@ public class PlaceSchedulingService {
 
     private static final int SEARCH_RADIUS = 12000;
 
-    private final List<PlaceType> placeTypes = List.of(
-            PlaceType.HISTORICAL,
-            PlaceType.MUSEUMS,
-            PlaceType.LANDMARKS,
-            PlaceType.ARCHAEOLOGICAL_SITE,
-            PlaceType.MONUMENT,
-            PlaceType.CULTURAL_CENTER,
-            PlaceType.THEATER,
-            PlaceType.ART_GALLERY,
-            PlaceType.NATURE,
-            PlaceType.PARKS,
-            PlaceType.VIEWPOINT,
-            PlaceType.HIKING_TRAIL,
-            PlaceType.GARDEN,
-            PlaceType.FOREST,
-            PlaceType.MOUNTAIN,
-            PlaceType.WATERFALL,
-            PlaceType.RESTAURANT,
-            PlaceType.CAFE_BAR,
-            PlaceType.BAKERY,
-            PlaceType.ICE_CREAM,
-            PlaceType.DESSERT_SHOP,
-            PlaceType.FOOD_COURT,
-            PlaceType.BREWERY,
-            PlaceType.WINERY,
-            PlaceType.FOOD_TRUCK,
-            PlaceType.MALL,
-            PlaceType.HOTEL,
-            PlaceType.HOSTEL,
-            PlaceType.GUEST_HOUSE,
-            PlaceType.RESORT,
-            PlaceType.LODGING,
-            PlaceType.CAMPGROUND,
-            PlaceType.APARTMENT,
-            PlaceType.NIGHTCLUB,
-            PlaceType.CINEMA,
-            PlaceType.GAME_CENTER,
-            PlaceType.ZOO,
-            PlaceType.GYM,
-            PlaceType.STADIUM,
-            PlaceType.SWIMMING_POOL,
-            PlaceType.TENNIS_COURT,
-            PlaceType.PARKING,
-            PlaceType.AIRPORT,
-            PlaceType.TRAIN_STATION,
-            PlaceType.BUS_STATION,
-            PlaceType.SCHOOL,
-            PlaceType.UNIVERSITY,
-            PlaceType.LIBRARY,
-            PlaceType.RESEARCH_INSTITUTE,
-            PlaceType.CHURCH,
-            PlaceType.MOSQUE,
-            PlaceType.TEMPLE,
-            PlaceType.SYNAGOGUE,
-            PlaceType.PLACE_OF_WORSHIP,
-            PlaceType.GOVERNMENT_BUILDING,
-            PlaceType.EMBASSY
-    );
+    private final List<PlaceType> placeTypes = List.of(PlaceType.values());
 
     @Autowired
     public PlaceSchedulingService(GoogleMapsService googleMapsService, PlaceRepository placeRepository) {
@@ -139,7 +80,7 @@ public class PlaceSchedulingService {
             case NATURE, FOREST, MOUNTAIN, WATERFALL -> "natural_feature";
             case HIKING_TRAIL -> "trail";
             case VIEWPOINT -> "point_of_interest";
-            case HOTEL, HOSTEL, GUEST_HOUSE, RESORT, LODGING, CAMPGROUND, APARTMENT -> "lodging";
+            case HOTEL, HOSTEL, RESORT, APARTMENT -> "lodging";
             case NIGHTCLUB -> "night_club";
             case GAME_CENTER -> "amusement_center";
             case ZOO -> "zoo";
@@ -155,7 +96,7 @@ public class PlaceSchedulingService {
             case RESEARCH_INSTITUTE -> "point_of_interest";
             case CHURCH -> "church";
             case MOSQUE -> "mosque";
-            case TEMPLE, SYNAGOGUE -> "place_of_worship";
+            case TEMPLE -> "place_of_worship";
             case PLACE_OF_WORSHIP -> "place_of_worship";
             case GOVERNMENT_BUILDING -> "city_hall";
             case EMBASSY -> "embassy";
@@ -175,15 +116,24 @@ public class PlaceSchedulingService {
             for (Map<String, Object> placeData : results) {
                 try {
                     String placeId = (String) placeData.get("place_id");
-                    if (placeId == null) continue;
+                    if (placeId == null || placeId.isBlank()) {
+                        log.warn("Skipping place: missing place_id");
+                        continue;
+                    }
 
                     Optional<Place> existingPlace = placeRepository.findByGooglePlaceId(placeId);
                     Place place = existingPlace.orElseGet(Place::new);
                     place.setGooglePlaceId(placeId);
                     updatePlaceFromGoogleData(place, placeData, placeType);
+
+                    if (place.getName() == null || place.getLatitude() == null || place.getLongitude() == null) {
+                        log.warn("Skipping invalid place (missing name or coordinates): {}", placeId);
+                        continue;
+                    }
+
                     placeRepository.save(place);
                 } catch (Exception e) {
-                    log.error("Error processing place: {}", e.getMessage());
+                    log.error("Error processing place entry: {}", e.getMessage());
                 }
             }
         } else {
