@@ -7,17 +7,31 @@ import org.springframework.web.client.RestTemplate;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Service
 public class GoogleMapsService {
 
-//    @Value("${google.maps.api.key}")
-//    private String apiKey;
-    private String apiKey = "AIzaSyCJIYdrnrRp1x3d-nQOLTVA5v940bTjUT4";
+    @Value("${google.maps.api.key}")
+    private String apiKey;
 
     private final RestTemplate restTemplate;
+
+    // Multiple center points around Skopje to improve coverage
+    private final String[] skopjeLocations = {
+            "41.9981,21.4254", // City center
+            "42.0040,21.3923", // West Skopje
+            "41.9937,21.4533", // East Skopje
+            "42.0173,21.4406", // North Skopje
+            "41.9800,21.4194", // South Skopje
+            "42.0227,21.4390", // North extreme
+            "41.9710,21.4170", // South extreme
+            "41.9935,21.3771", // West extreme
+            "41.9990,21.4750"  // East extreme
+    };
 
     public GoogleMapsService() {
         this.restTemplate = new RestTemplate();
@@ -25,25 +39,167 @@ public class GoogleMapsService {
 
     public Map<String, Object> getPlacesInSkopje(String type, int radius) {
         try {
-            String location = "41.9981,21.4254";
+            String location = "41.9981,21.4254"; // Central Skopje coordinates
+            Map<String, Object> combinedResults = new HashMap<>();
+            List<Map<String, Object>> allResults = new ArrayList<>();
+            combinedResults.put("results", allResults);
 
+            // Improve the search by adding keyword if appropriate
+            String keyword = getKeywordForType(type);
+            String additionalParams = keyword != null ? "&keyword=" + URLEncoder.encode(keyword, StandardCharsets.UTF_8.toString()) : "";
+
+            // Initial request
             String url = String.format(
-                    "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%s&radius=%d&type=%s&key=%s",
+                    "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%s&radius=%d&type=%s%s&key=%s",
                     location, radius,
                     URLEncoder.encode(type, StandardCharsets.UTF_8.toString()),
+                    additionalParams,
                     apiKey
             );
 
             Map<String, Object> response = restTemplate.getForObject(URI.create(url), HashMap.class);
-            System.out.println("🔍 GOOGLE RESPONSE: " + response); // ADD THIS
-            return response;
+            System.out.println("🔍 GOOGLE RESPONSE for " + type + ": Status=" + response.get("status"));
+
+            // Add first page results
+            if (response.containsKey("results")) {
+                List<Map<String, Object>> firstPageResults = (List<Map<String, Object>>) response.get("results");
+                allResults.addAll(firstPageResults);
+                System.out.println("Found " + firstPageResults.size() + " places in first page");
+            }
+
+            // Handle pagination with next_page_token if present
+            int pageCounter = 0;
+            while (response.containsKey("next_page_token") && response.get("next_page_token") != null && pageCounter < 10) {
+                pageCounter++;
+                // Need to wait before using next_page_token (Google's requirement)
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+
+                String nextPageToken = (String) response.get("next_page_token");
+                String nextUrl = String.format(
+                        "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=%s&key=%s",
+                        nextPageToken, apiKey
+                );
+
+                response = restTemplate.getForObject(URI.create(nextUrl), HashMap.class);
+
+                if (response.containsKey("results")) {
+                    List<Map<String, Object>> nextPageResults = (List<Map<String, Object>>) response.get("results");
+                    allResults.addAll(nextPageResults);
+                    System.out.println("Found " + nextPageResults.size() + " additional places in page " + pageCounter);
+                }
+            }
+
+            System.out.println("Total places found for " + type + ": " + allResults.size());
+
+            return combinedResults;
         } catch (Exception e) {
+            e.printStackTrace();
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
+            errorResponse.put("results", new ArrayList<>());
             return errorResponse;
         }
     }
 
+    // Additional method to search from multiple center points for better coverage
+    public Map<String, Object> getPlacesInSkopjeMultiPoint(String type, int radius) {
+        try {
+            Map<String, Object> combinedResults = new HashMap<>();
+            List<Map<String, Object>> allResults = new ArrayList<>();
+            combinedResults.put("results", allResults);
+
+            // Track place IDs to avoid duplicates
+            Map<String, Boolean> processedPlaceIds = new HashMap<>();
+
+            // Improve the search by adding keyword if appropriate
+            String keyword = getKeywordForType(type);
+            String additionalParams = keyword != null ? "&keyword=" + URLEncoder.encode(keyword, StandardCharsets.UTF_8.toString()) : "";
+
+            for (String location : skopjeLocations) {
+                String url = String.format(
+                        "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%s&radius=%d&type=%s%s&key=%s",
+                        location, radius,
+                        URLEncoder.encode(type, StandardCharsets.UTF_8.toString()),
+                        additionalParams,
+                        apiKey
+                );
+
+                Map<String, Object> response = restTemplate.getForObject(URI.create(url), HashMap.class);
+                processResults(response, allResults, processedPlaceIds);
+
+                // Handle pagination - we limit to 2 pages per location to avoid hitting API quotas
+                int pageCounter = 0;
+                while (response.containsKey("next_page_token") && response.get("next_page_token") != null && pageCounter < 2) {
+                    pageCounter++;
+                    try {
+                        Thread.sleep(2000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                    }
+
+                    String nextPageToken = (String) response.get("next_page_token");
+                    String nextUrl = String.format(
+                            "https://maps.googleapis.com/maps/api/place/nearbysearch/json?pagetoken=%s&key=%s",
+                            nextPageToken, apiKey
+                    );
+
+                    response = restTemplate.getForObject(URI.create(nextUrl), HashMap.class);
+                    processResults(response, allResults, processedPlaceIds);
+                }
+
+                // Wait between location queries to avoid rate limiting
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+
+            System.out.println("Total unique places found for " + type + ": " + allResults.size());
+
+            return combinedResults;
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            errorResponse.put("results", new ArrayList<>());
+            return errorResponse;
+        }
+    }
+
+    // Helper method to add keywords for certain place types to improve results
+    private String getKeywordForType(String type) {
+        return switch (type) {
+            case "tourist_attraction" -> "historic";
+            case "landmark" -> "monument";
+            case "point_of_interest" -> "attraction";
+            case "restaurant" -> "food";
+            default -> null;
+        };
+    }
+
+    private void processResults(Map<String, Object> response, List<Map<String, Object>> allResults,
+                                Map<String, Boolean> processedPlaceIds) {
+        if (response.containsKey("results")) {
+            List<Map<String, Object>> results = (List<Map<String, Object>>) response.get("results");
+            int newPlaces = 0;
+
+            for (Map<String, Object> place : results) {
+                String placeId = (String) place.get("place_id");
+                if (placeId != null && !processedPlaceIds.containsKey(placeId)) {
+                    allResults.add(place);
+                    processedPlaceIds.put(placeId, true);
+                    newPlaces++;
+                }
+            }
+
+            System.out.println("Found " + results.size() + " places, " + newPlaces + " were new");
+        }
+    }
 
     public Map<String, Object> getGeocodingForSkopje() {
         try {

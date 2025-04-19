@@ -32,19 +32,30 @@ public class Place {
 
     private Double longitude;
 
+    @Column(columnDefinition = "TEXT")
     private String vicinity;  // Short formatted address returned by Google
 
+    @Column(columnDefinition = "TEXT")
     private String photoReference;  // For Google Photos API
 
     private Boolean openNow;
 
     private Integer userRatingsTotal;
 
+    @Column(columnDefinition = "TEXT")
     private String address;
+
     private String phoneNumber;
+
+    @Column(columnDefinition = "TEXT")
     private String websiteURL;
+
+    @Column(columnDefinition = "TEXT")
     private String socialMedia;
+
     private Float averageRating;
+
+    @Column(columnDefinition = "TEXT")
     private String sentimentTag;
 
     @OneToMany(mappedBy = "place", cascade = CascadeType.ALL, orphanRemoval = true)
