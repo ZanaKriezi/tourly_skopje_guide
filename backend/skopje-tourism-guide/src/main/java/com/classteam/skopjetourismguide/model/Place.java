@@ -24,6 +24,22 @@ public class Place {
     @Enumerated(EnumType.STRING)
     private PlaceType placeType;
 
+    //Google's placeId for unique identification
+    @Column(unique = true, nullable = false)
+    private String googlePlaceId;
+
+    private Double latitude;
+
+    private Double longitude;
+
+    private String vicinity;  // Short formatted address returned by Google
+
+    private String photoReference;  // For Google Photos API
+
+    private Boolean openNow;
+
+    private Integer userRatingsTotal;
+
     private String address;
     private String phoneNumber;
     private String websiteURL;

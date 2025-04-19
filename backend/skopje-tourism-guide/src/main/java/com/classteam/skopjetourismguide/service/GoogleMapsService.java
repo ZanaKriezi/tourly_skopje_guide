@@ -25,24 +25,25 @@ public class GoogleMapsService {
 
     public Map<String, Object> getPlacesInSkopje(String type, int radius) {
         try {
-            // Skopje center coordinates
             String location = "41.9981,21.4254";
 
             String url = String.format(
                     "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%s&radius=%d&type=%s&key=%s",
-                    location,
-                    radius,
+                    location, radius,
                     URLEncoder.encode(type, StandardCharsets.UTF_8.toString()),
                     apiKey
             );
 
-            return restTemplate.getForObject(URI.create(url), HashMap.class);
+            Map<String, Object> response = restTemplate.getForObject(URI.create(url), HashMap.class);
+            System.out.println("🔍 GOOGLE RESPONSE: " + response); // ADD THIS
+            return response;
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", e.getMessage());
             return errorResponse;
         }
     }
+
 
     public Map<String, Object> getGeocodingForSkopje() {
         try {
