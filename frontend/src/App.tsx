@@ -10,6 +10,7 @@ import RegisterPage from './pages/RegisterPage';
 import MapPage from './pages/MapPage';
 import PlacesPage from './pages/PlacesPage';
 import PlaceDetailsPage from './pages/PlaceDetailsPage';
+import ToursPage from './pages/ToursPage';
 import './App.css';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 
@@ -31,6 +32,7 @@ const App: React.FC = () => {
               <Route path="/map" element={<MapPage apiKey={googleMapsApiKey} />} />
               <Route path="/places" element={<PlacesPage />} />
               <Route path="/places/:id" element={<PlaceDetailsPage />} />
+              <Route path="/tours" element={<ToursPage />} />
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute />}>
