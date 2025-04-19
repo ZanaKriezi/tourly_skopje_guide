@@ -49,7 +49,7 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <h2 className="font-montserrat text-2xl font-bold text-text mb-6 text-center">Sign In</h2>
+        <h2 className="font-montserrat text-2xl font-bold text-text mb-6 text-center">Log In</h2>
         
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 p-3 rounded mb-4">
@@ -91,7 +91,7 @@ const Login: React.FC = () => {
             className="w-full bg-primary text-white py-2 rounded font-poppins font-medium hover:bg-secondary transition-colors"
             disabled={loading}
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Signing in...' : 'Log In'}
           </button>
         </form>
         

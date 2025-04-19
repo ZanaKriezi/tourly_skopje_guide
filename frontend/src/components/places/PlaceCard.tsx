@@ -35,16 +35,16 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place }) => {
     <div className="bg-white rounded-lg shadow-md overflow-hidden transition-transform hover:shadow-lg hover:-translate-y-1">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
-        <img 
-          src={imageUrl} 
-          alt={place.name} 
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute top-2 right-2 bg-primary text-white text-xs font-semibold px-2 py-1 rounded">
-          {place.placeType.replace(/_/g, ' ')}
-        </div>
+      <img
+        src={imageUrl}
+        alt={place.name}
+        className="w-full h-full object-cover"
+      />
+      <div className="absolute top-2 right-2 bg-primary text-white text-xs font-semibold px-2 py-1 rounded">
+        {place.placeType.replace(/_/g, ' ')}
       </div>
-      
+    </div>
+
       {/* Content */}
       <div className="p-4">
         <h3 className="font-poppins font-semibold text-lg mb-1 text-text">
@@ -65,16 +65,23 @@ const PlaceCard: React.FC<PlaceCardProps> = ({ place }) => {
         <p className="font-inter text-xs text-gray-500 mb-4 line-clamp-1">
           <LocationIcon /> {place.address}
         </p>
-        
-        {/* Tags */}
+
+        {/* Duration */}
+        {place.duration && (
+          <p className="font-inter text-sm text-gray-600 mb-3">
+            ⏱ {place.duration}
+          </p>
+        )}
+
+         {/* Tags */}
         {place.sentimentTag && (
-          <div className="mb-4">
+          <div className="mb-2">
             <span className="bg-background text-primary text-xs px-2 py-1 rounded-full">
               #{place.sentimentTag}
             </span>
           </div>
         )}
-        
+
         {/* Button */}
         <Link to={`/places/${place.id}`}>
           <Button variant="outline" fullWidth>

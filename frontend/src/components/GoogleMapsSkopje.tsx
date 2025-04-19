@@ -19,7 +19,8 @@ interface GoogleMapsSkopjeProps {
 }
 
 const GoogleMapsSkopje: React.FC<GoogleMapsSkopjeProps> = ({ apiKey }) => {
-  const [center, setCenter] = useState({ lat: 41.9981, lng: 21.4254 });
+ // @ts-ignore
+const [center, setCenter] = useState({ lat: 41.9981, lng: 21.4254 });
   const [places, setPlaces] = useState<Place[]>([]);
   const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [placeType, setPlaceType] = useState<string>('restaurant');

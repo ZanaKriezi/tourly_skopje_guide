@@ -37,7 +37,7 @@ const Header: React.FC = () => {
             <>
               <Link to="/login">
                 <Button variant="outline">
-                  Sign In
+                  Log In
                 </Button>
               </Link>
               
