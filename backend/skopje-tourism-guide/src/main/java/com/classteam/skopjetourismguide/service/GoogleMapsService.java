@@ -105,8 +105,52 @@ public class GoogleMapsService {
         }
     }
 
+    /**
+     * Get detailed information about a specific place using its place_id
+     *
+     * @param placeId The Google place_id to get details for
+     * @return A map containing place details including reviews
+     */
+    public Map<String, Object> getPlaceDetails(String placeId) {
+        try {
+            String url = String.format(
+                    "https://maps.googleapis.com/maps/api/place/details/json?place_id=%s&fields=name,rating,reviews,formatted_phone_number,website,address_components,opening_hours&key=%s",
+                    placeId,
+                    apiKey
+            );
+
+            Map<String, Object> response = restTemplate.getForObject(URI.create(url), HashMap.class);
+
+            if (response.containsKey("status") && "OK".equals(response.get("status"))) {
+                return response;
+            } else {
+                System.out.println("Error getting place details for " + placeId + ": " + response.get("status"));
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", response.get("status"));
+                return errorResponse;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", e.getMessage());
+            return errorResponse;
+        }
+    }
+
     // Additional method to search from multiple center points for better coverage
     public Map<String, Object> getPlacesInSkopjeMultiPoint(String type, int radius) {
+        return getPlacesInSkopjeMultiPoint(type, radius, null);
+    }
+
+    /**
+     * Gets places of a specific type from multiple points around Skopje with optional keyword
+     *
+     * @param type Google place type
+     * @param radius Search radius in meters
+     * @param keyword Optional keyword to refine search
+     * @return Map containing search results
+     */
+    public Map<String, Object> getPlacesInSkopjeMultiPoint(String type, int radius, String keyword) {
         try {
             Map<String, Object> combinedResults = new HashMap<>();
             List<Map<String, Object>> allResults = new ArrayList<>();
@@ -115,16 +159,18 @@ public class GoogleMapsService {
             // Track place IDs to avoid duplicates
             Map<String, Boolean> processedPlaceIds = new HashMap<>();
 
-            // Improve the search by adding keyword if appropriate
-            String keyword = getKeywordForType(type);
-            String additionalParams = keyword != null ? "&keyword=" + URLEncoder.encode(keyword, StandardCharsets.UTF_8.toString()) : "";
+            // Prepare keyword parameter if provided
+            String keywordParam = "";
+            if (keyword != null && !keyword.isEmpty()) {
+                keywordParam = "&keyword=" + URLEncoder.encode(keyword, StandardCharsets.UTF_8.toString());
+            }
 
             for (String location : skopjeLocations) {
                 String url = String.format(
                         "https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=%s&radius=%d&type=%s%s&key=%s",
                         location, radius,
                         URLEncoder.encode(type, StandardCharsets.UTF_8.toString()),
-                        additionalParams,
+                        keywordParam,
                         apiKey
                 );
 
@@ -159,7 +205,7 @@ public class GoogleMapsService {
                 }
             }
 
-            System.out.println("Total unique places found for " + type + ": " + allResults.size());
+            System.out.println("Total unique places found for " + type + (keyword != null ? " with keyword " + keyword : "") + ": " + allResults.size());
 
             return combinedResults;
         } catch (Exception e) {

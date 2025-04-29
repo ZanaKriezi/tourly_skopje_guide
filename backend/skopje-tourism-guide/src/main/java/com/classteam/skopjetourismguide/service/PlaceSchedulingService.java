@@ -1,14 +1,20 @@
 package com.classteam.skopjetourismguide.service;
 
 import com.classteam.skopjetourismguide.model.Place;
+import com.classteam.skopjetourismguide.model.Review;
+import com.classteam.skopjetourismguide.model.User;
 import com.classteam.skopjetourismguide.model.enumerations.PlaceType;
 import com.classteam.skopjetourismguide.repository.PlaceRepository;
+import com.classteam.skopjetourismguide.repository.ReviewRepository;
+import com.classteam.skopjetourismguide.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -19,15 +25,21 @@ public class PlaceSchedulingService {
 
     private final GoogleMapsService googleMapsService;
     private final PlaceRepository placeRepository;
+    private final ReviewRepository reviewRepository;
+    private final UserRepository userRepository;
 
     private static final int SEARCH_RADIUS = 12000;
+    private static final long SYSTEM_USER_ID = 1L; // ID for system-generated reviews
 
     private final List<PlaceType> placeTypes = List.of(PlaceType.values());
 
     @Autowired
-    public PlaceSchedulingService(GoogleMapsService googleMapsService, PlaceRepository placeRepository) {
+    public PlaceSchedulingService(GoogleMapsService googleMapsService, PlaceRepository placeRepository,
+                                  ReviewRepository reviewRepository, UserRepository userRepository) {
         this.googleMapsService = googleMapsService;
         this.placeRepository = placeRepository;
+        this.reviewRepository = reviewRepository;
+        this.userRepository = userRepository;
     }
 
     @Scheduled(fixedRate = 172800000)
@@ -36,7 +48,8 @@ public class PlaceSchedulingService {
         for (PlaceType placeType : placeTypes) {
             try {
                 String googlePlaceType = mapToGooglePlaceType(placeType);
-                updatePlacesForType(googlePlaceType, placeType);
+                String keyword = getKeywordForPlaceType(placeType);
+                updatePlacesForType(googlePlaceType, keyword, placeType);
                 Thread.sleep(5000);
             } catch (Exception e) {
                 log.error("Error updating places for type {}: {}", placeType, e.getMessage());
@@ -50,7 +63,8 @@ public class PlaceSchedulingService {
         for (PlaceType placeType : placeTypes) {
             try {
                 String googlePlaceType = mapToGooglePlaceType(placeType);
-                updatePlacesForType(googlePlaceType, placeType);
+                String keyword = getKeywordForPlaceType(placeType);
+                updatePlacesForType(googlePlaceType, keyword, placeType);
                 Thread.sleep(5000);
             } catch (Exception e) {
                 log.error("Error updating places for type {}: {}", placeType, e.getMessage());
@@ -59,55 +73,124 @@ public class PlaceSchedulingService {
         log.info("Completed manual place data update: {}", LocalDateTime.now());
     }
 
+    /**
+     * Maps application-specific PlaceType to Google Maps API place types
+     *
+     * @param placeType The application PlaceType enum value
+     * @return The corresponding Google place type string
+     */
     private String mapToGooglePlaceType(PlaceType placeType) {
         return switch (placeType) {
+            // Cultural and Historical
+            case MUSEUMS -> "museum";
+            case HISTORICAL, LANDMARKS, ARCHAEOLOGICAL_SITE, MONUMENT -> "tourist_attraction";
+            case CULTURAL_CENTER -> "point_of_interest";
+
+            // Entertainment
+            case THEATER -> "theater";
+            case ART_GALLERY -> "art_gallery";
+            case CINEMA -> "movie_theater";
+            case NIGHTCLUB -> "night_club";
+            case GAME_CENTER -> "amusement_park";
+
+            // Natural Places
+            case NATURE, FOREST, MOUNTAIN, WATERFALL -> "natural_feature";
+            case PARKS, GARDEN, HIKING_TRAIL -> "park";
+            case VIEWPOINT -> "tourist_attraction";
+
+            // Food and Drink
             case RESTAURANT -> "restaurant";
             case CAFE_BAR -> "cafe";
             case BAKERY -> "bakery";
             case ICE_CREAM, DESSERT_SHOP -> "store";
-            case FOOD_COURT -> "food";
-            case BREWERY -> "bar";
+            case FOOD_COURT -> "restaurant";
+            case BREWERY, BAR -> "bar";
             case WINERY -> "liquor_store";
             case FOOD_TRUCK -> "meal_takeaway";
-            case MUSEUMS -> "museum";
-            case ART_GALLERY -> "art_gallery";
-            case CINEMA -> "movie_theater";
-            case THEATER -> "theater";
-            case CULTURAL_CENTER -> "point_of_interest";
-            case HISTORICAL, MONUMENT, LANDMARKS, ARCHAEOLOGICAL_SITE -> "tourist_attraction";
+
+            // Shopping
             case MALL -> "shopping_mall";
-            case PARKS, GARDEN -> "park";
-            case NATURE, FOREST, MOUNTAIN, WATERFALL -> "natural_feature";
-            case HIKING_TRAIL -> "trail";
-            case VIEWPOINT -> "point_of_interest";
+
+            // Accommodation
             case HOTEL, HOSTEL, RESORT, APARTMENT -> "lodging";
-            case NIGHTCLUB -> "night_club";
-            case GAME_CENTER -> "amusement_center";
-            case ZOO -> "zoo";
+
+            // Sports and Recreation
             case GYM -> "gym";
-            case STADIUM, TENNIS_COURT, SWIMMING_POOL -> "stadium";
+            case STADIUM, TENNIS_COURT -> "stadium";
+            case SWIMMING_POOL -> "spa";
+
+            // Transportation
             case PARKING -> "parking";
             case AIRPORT -> "airport";
             case TRAIN_STATION -> "train_station";
             case BUS_STATION -> "bus_station";
+
+            // Educational
             case SCHOOL -> "school";
             case UNIVERSITY -> "university";
             case LIBRARY -> "library";
-            case RESEARCH_INSTITUTE -> "point_of_interest";
+            case RESEARCH_INSTITUTE -> "university";
+
+            // Religious
             case CHURCH -> "church";
             case MOSQUE -> "mosque";
-            case TEMPLE -> "place_of_worship";
+            case TEMPLE -> "hindu_temple";
             case PLACE_OF_WORSHIP -> "place_of_worship";
+
+            // Government and Services
             case GOVERNMENT_BUILDING -> "city_hall";
             case EMBASSY -> "embassy";
+
+            // Default case
+            case UNKNOWN  -> "point_of_interest";
             default -> "point_of_interest";
         };
     }
 
-    private void updatePlacesForType(String googlePlaceType, PlaceType placeType) {
-        log.info("Updating places for type: {}", placeType);
+    /**
+     * Returns a keyword to refine the Google Places API search for specific place types
+     *
+     * @param placeType The application PlaceType enum value
+     * @return A keyword string or null if no specific keyword is needed
+     */
+    private String getKeywordForPlaceType(PlaceType placeType) {
+        return switch (placeType) {
+            case HISTORICAL -> "historical";
+            case LANDMARKS -> "landmark";
+            case ARCHAEOLOGICAL_SITE -> "archaeological";
+            case MONUMENT -> "monument";
+            case CULTURAL_CENTER -> "cultural";
+            case VIEWPOINT -> "viewpoint";
+            case GAME_CENTER -> "arcade";
+            case HIKING_TRAIL -> "hiking";
+            case GARDEN -> "garden";
+            case FOREST -> "forest";
+            case MOUNTAIN -> "mountain";
+            case WATERFALL -> "waterfall";
+            case ICE_CREAM -> "ice cream";
+            case DESSERT_SHOP -> "dessert";
+            case FOOD_COURT -> "food court";
+            case BREWERY -> "brewery";
+            case WINERY -> "winery";
+            case FOOD_TRUCK -> "food truck";
+            case HOTEL -> "hotel";
+            case HOSTEL -> "hostel";
+            case RESORT -> "resort";
+            case APARTMENT -> "apartment";
+            case SWIMMING_POOL -> "swimming pool";
+            case TENNIS_COURT -> "tennis";
+            case RESEARCH_INSTITUTE -> "research";
+            case GOVERNMENT_BUILDING -> "government";
+            default -> null;
+        };
+    }
 
-        Map<String, Object> placesResult = googleMapsService.getPlacesInSkopjeMultiPoint(googlePlaceType, SEARCH_RADIUS);
+    private void updatePlacesForType(String googlePlaceType, String keyword, PlaceType placeType) {
+        log.info("Updating places for type: {} (Google type: {}, keyword: {})",
+                placeType, googlePlaceType, keyword != null ? keyword : "none");
+
+        // Get places from Google Maps API with appropriate type and keyword
+        Map<String, Object> placesResult = googleMapsService.getPlacesInSkopjeMultiPoint(googlePlaceType, SEARCH_RADIUS, keyword);
 
         if (placesResult.containsKey("results")) {
             List<Map<String, Object>> results = (List<Map<String, Object>>) placesResult.get("results");
@@ -131,13 +214,17 @@ public class PlaceSchedulingService {
                         continue;
                     }
 
-                    placeRepository.save(place);
+                    Place savedPlace = placeRepository.save(place);
+
+                    // Fetch and update reviews for this place
+                    fetchAndSaveReviewsForPlace(savedPlace.getGooglePlaceId(), savedPlace);
+
                 } catch (Exception e) {
                     log.error("Error processing place entry: {}", e.getMessage());
                 }
             }
         } else {
-            log.warn("No results found for place type: {}", placeType);
+            log.warn("No results found for place type: {} (Google type: {})", placeType, googlePlaceType);
             if (placesResult.containsKey("error")) {
                 log.error("Error response: {}", placesResult.get("error"));
             }
@@ -151,6 +238,17 @@ public class PlaceSchedulingService {
 
         place.setPlaceType(placeType);
 
+        // Check for editorial_summary for place description
+        if (placeData.containsKey("editorial_summary")) {
+            Map<String, Object> editorialSummary = (Map<String, Object>) placeData.get("editorial_summary");
+            if (editorialSummary.containsKey("overview")) {
+                String overview = (String) editorialSummary.get("overview");
+                // Only update description if it's empty or null
+                if (place.getDescription() == null || place.getDescription().isEmpty()) {
+                    place.setDescription(overview);
+                }
+            }
+        }
         if (placeData.containsKey("vicinity")) {
             place.setVicinity((String) placeData.get("vicinity"));
             if (place.getAddress() == null) {
@@ -196,6 +294,57 @@ public class PlaceSchedulingService {
 
         if (placeData.containsKey("formatted_phone_number")) {
             place.setPhoneNumber((String) placeData.get("formatted_phone_number"));
+        }
+    }
+
+    private void fetchAndSaveReviewsForPlace(String placeId, Place place) {
+        try {
+            Map<String, Object> placeDetails = googleMapsService.getPlaceDetails(placeId);
+
+            if (placeDetails.containsKey("result") && ((Map)placeDetails.get("result")).containsKey("reviews")) {
+                List<Map<String, Object>> reviewsData = (List<Map<String, Object>>) ((Map)placeDetails.get("result")).get("reviews");
+
+                try {
+                    // Get the system user for Google reviews
+                    User systemUser = userRepository.findById(SYSTEM_USER_ID)
+                            .orElseThrow(() -> new RuntimeException("System user not found"));
+
+                    // Process each review
+                    for (Map<String, Object> reviewData : reviewsData) {
+                        String authorName = (String) reviewData.get("author_name");
+                        String reviewText = (String) reviewData.get("text");
+                        int rating = ((Number) reviewData.get("rating")).intValue();
+                        long timeStamp = ((Number) reviewData.get("time")).longValue();
+
+                        // Create a unique identifier for this Google review
+                        String reviewIdentifier = placeId + "_" + authorName + "_" + timeStamp;
+
+                        // Check if we already have this review
+                        boolean reviewExists = place.getReviews().stream()
+                                .anyMatch(r -> r.getComment() != null &&
+                                        r.getComment().startsWith("[Google Review by " + authorName + "]"));
+
+                        if (!reviewExists) {
+                            Review review = new Review();
+                            review.setRating(rating);
+                            review.setComment("[Google Review by " + authorName + "] " + reviewText);
+                            review.setTimestamp(LocalDateTime.ofEpochSecond(timeStamp, 0, ZoneOffset.UTC));
+                            review.setUser(systemUser);
+                            review.setPlace(place);
+
+                            place.getReviews().add(review);
+                        }
+                    }
+
+                    // Save the place with its new reviews
+                    placeRepository.save(place);
+                    log.info("Added {} reviews for place: {}", reviewsData.size(), place.getName());
+                } catch (Exception e) {
+                    log.error("Error processing reviews for place {}: {}", placeId, e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error fetching reviews for place {}: {}", placeId, e.getMessage());
         }
     }
 }

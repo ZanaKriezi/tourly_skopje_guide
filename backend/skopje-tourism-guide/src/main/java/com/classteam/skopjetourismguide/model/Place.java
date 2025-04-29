@@ -29,7 +29,7 @@ public class Place {
     private PlaceType placeType;
 
     //Google's placeId for unique identification
-    @Column(unique = true)
+    @Column(unique = true, columnDefinition = "TEXT")
     private String googlePlaceId;
 
     private Double latitude;
@@ -39,7 +39,7 @@ public class Place {
     @Column(columnDefinition = "TEXT")
     private String vicinity;  // Short formatted address returned by Google
 
-    @Column(length = 2000)
+    @Column(columnDefinition = "TEXT")
     private String photoReference;  // For Google Photos API
 
     private Boolean openNow;
