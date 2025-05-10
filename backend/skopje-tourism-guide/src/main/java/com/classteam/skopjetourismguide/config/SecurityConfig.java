@@ -53,7 +53,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
-                        .requestMatchers("/api/places/**").permitAll() // Add this line
+                        .requestMatchers("/api/places/**").permitAll()
+                        .requestMatchers("/api/tours/**").permitAll() // Add this line
                         .requestMatchers("/api/maps/**").permitAll()   // Add this line if needed
                         .anyRequest().authenticated()
                 )
