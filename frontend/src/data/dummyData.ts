@@ -20,6 +20,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[0],
     averageRating: 4.5,
     sentimentTag: "historic",
+    duration: "1-2 hours",
+    tags: ["Historic", "Viewpoint"],
+    category: "Historic",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -32,6 +35,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[1],
     averageRating: 4.3,
     sentimentTag: "educational",
+    duration: "1-3 hours",
+    tags: ["Art", "Culture"],
+    category: "Museum",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -44,6 +50,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[2],
     averageRating: 4.7,
     sentimentTag: "scenic",
+    duration: "Half day",
+    tags: ["Nature", "Adventure"],
+    category: "Nature",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -56,6 +65,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[3],
     averageRating: 4.4,
     sentimentTag: "relaxing",
+    duration: "1 hour",
+    tags: ["Relax", "Greenery"],
+    category: "Park",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -68,6 +80,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[4],
     averageRating: 4.6,
     sentimentTag: "iconic",
+    duration: "15–30 minutes",
+    tags: ["Landmark", "Historic"],
+    category: "Landmark",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -80,6 +95,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[0],
     averageRating: 4.6,
     sentimentTag: "authentic",
+    duration: "1-2 hours",
+    tags: ["Food", "Traditional"],
+    category: "Restaurant",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -92,6 +110,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[1],
     averageRating: 4.3,
     sentimentTag: "modern",
+    duration: "2-3 hours",
+    tags: ["Shopping", "Entertainment"],
+    category: "Mall",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -104,6 +125,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[2],
     averageRating: 4.5,
     sentimentTag: "trendy",
+    duration: "1-2 hours",
+    tags: ["Coffee", "Chill"],
+    category: "Cafe/Bar",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -116,6 +140,9 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[3],
     averageRating: 4.4,
     sentimentTag: "artsy",
+    duration: "1 hour",
+    tags: ["Creative", "Social"],
+    category: "Cafe/Bar",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   },
@@ -128,10 +155,14 @@ export const dummyPlaces: Place[] = [
     imageUrl: placeImages[4],
     averageRating: 4.6,
     sentimentTag: "central",
+    duration: "2-3 hours",
+    tags: ["Fine Dining", "Central"],
+    category: "Restaurant",
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   }
 ];
+
 
 // Create a mock API service that uses the dummy data
 export const mockApiService = {

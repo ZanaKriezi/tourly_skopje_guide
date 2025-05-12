@@ -1,59 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import Button from '../common/Button';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const location = useLocation();
-  
-  // Add scroll listener to detect when page is scrolled
-  useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 50) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
-    };
-    
-    window.addEventListener('scroll', handleScroll);
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
-  
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
-  };
-  
-  const closeMenu = () => {
-    setIsMenuOpen(false);
-  };
-  
+
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = () => setIsMenuOpen(false);
   const handleLogout = () => {
     logout();
     closeMenu();
   };
-  
-  const isActive = (path: string) => {
-    return location.pathname === path;
-  };
-  
+
+  const isActive = (path: string) => location.pathname === path;
+
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      isScrolled ? 'bg-primary bg-opacity-95 shadow-md' : 'bg-transparent'
-    }`}>
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary shadow-md">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           {/* Logo and Brand */}
           <Link to="/" className="flex items-center" onClick={closeMenu}>
-            <span className="font-montserrat text-xl font-bold text-white">Skopje Tourism Guide</span>
+            <span className="font-montserrat text-xl font-bold text-white">
+              Skopje Tourism Guide
+            </span>
           </Link>
-          
+
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <div className="flex space-x-6">
@@ -62,7 +36,7 @@ const Navbar: React.FC = () => {
               <NavLink to="/tours" active={isActive('/tours')}>Tours</NavLink>
               <NavLink to="/about" active={isActive('/about')}>About</NavLink>
             </div>
-            
+
             {/* Authentication Buttons */}
             <div className="flex space-x-3">
               {isAuthenticated ? (
@@ -70,8 +44,8 @@ const Navbar: React.FC = () => {
                   <span className="font-poppins text-white">
                     Hi, {user?.name || user?.username}
                   </span>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={handleLogout}
                     className="text-white border-white hover:bg-white hover:bg-opacity-10"
@@ -82,19 +56,16 @@ const Navbar: React.FC = () => {
               ) : (
                 <>
                   <Link to="/login">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       className="text-black border-white hover:bg-white hover:bg-opacity-10"
                     >
-                      Sign In
+                      Log In
                     </Button>
                   </Link>
                   <Link to="/register">
-                    <Button 
-                      variant="accent" 
-                      size="sm"
-                    >
+                    <Button variant="accent" size="sm">
                       Register
                     </Button>
                   </Link>
@@ -102,21 +73,21 @@ const Navbar: React.FC = () => {
               )}
             </div>
           </div>
-          
+
           {/* Mobile Menu Button */}
-          <button 
+          <button
             className="md:hidden text-white focus:outline-none"
             onClick={toggleMenu}
             aria-label="Toggle menu"
           >
-            <svg 
-              viewBox="0 0 24 24" 
-              width="24" 
-              height="24" 
-              stroke="currentColor" 
-              strokeWidth="2" 
-              fill="none" 
-              strokeLinecap="round" 
+            <svg
+              viewBox="0 0 24 24"
+              width="24"
+              height="24"
+              stroke="currentColor"
+              strokeWidth="2"
+              fill="none"
+              strokeLinecap="round"
               strokeLinejoin="round"
             >
               {isMenuOpen ? (
@@ -127,7 +98,7 @@ const Navbar: React.FC = () => {
             </svg>
           </button>
         </div>
-        
+
         {/* Mobile Menu */}
         {isMenuOpen && (
           <div className="md:hidden mt-3 py-3 border-t border-white border-opacity-20">
@@ -137,7 +108,7 @@ const Navbar: React.FC = () => {
               <MobileNavLink to="/tours" active={isActive('/tours')} onClick={closeMenu}>Tours</MobileNavLink>
               <MobileNavLink to="/about" active={isActive('/about')} onClick={closeMenu}>About</MobileNavLink>
             </div>
-            
+
             {/* Mobile Authentication */}
             <div className="mt-4 pt-4 border-t border-white border-opacity-20 flex flex-col space-y-2">
               {isAuthenticated ? (
@@ -145,8 +116,8 @@ const Navbar: React.FC = () => {
                   <span className="font-poppins text-white mb-2">
                     Hi, {user?.name || user?.username}
                   </span>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     fullWidth
                     className="text-white border-white hover:bg-white hover:bg-opacity-10"
                     onClick={handleLogout}
@@ -157,12 +128,12 @@ const Navbar: React.FC = () => {
               ) : (
                 <>
                   <Link to="/login" onClick={closeMenu}>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       fullWidth
                       className="text-white border-white hover:bg-white hover:bg-opacity-10"
                     >
-                      Sign In
+                      Log In
                     </Button>
                   </Link>
                   <Link to="/register" onClick={closeMenu}>

@@ -1,3 +1,4 @@
+
 package com.classteam.skopjetourismguide.service;
 
 import com.classteam.skopjetourismguide.model.Place;
@@ -348,3 +349,4 @@ public class PlaceSchedulingService {
         }
     }
 }
+

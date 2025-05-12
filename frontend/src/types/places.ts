@@ -22,6 +22,9 @@ export interface Place extends BaseEntity {
   imageUrl?: string;
   averageRating: number;
   sentimentTag?: string;
+  duration?: string;
+  tags?: string[];
+  category?: string;
 }
 
 export interface PlaceFilter {

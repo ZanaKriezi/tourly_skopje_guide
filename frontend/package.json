@@ -10,8 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@googlemaps/react-wrapper": "^1.2.0",
+    "@headlessui/react": "^2.2.2",
     "@react-google-maps/api": "^2.20.6",
+    "@types/google.maps": "^3.58.1",
     "axios": "^1.8.4",
+    "lucide-react": "^0.501.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-router-dom": "^7.5.0"

@@ -6,6 +6,7 @@ import HeroSection from '../components/home/HeroSection';
 import CategorySection, { Category } from '../components/home/CategorySection';
 import FeaturedPlaces from '../components/home/FeaturedPlaces';
 import LocalTips from '../components/home/LocalTips';
+import Reviews from '../components/home/Reviews';
 
 // Import dummy data and mock API
 import { mockApiService } from '../data/dummyData';
@@ -162,6 +163,8 @@ const HomePage: React.FC = () => {
         title="Local Tips"
         subtitle="Insights from locals to enhance your Skopje experience"
       />
+
+      <Reviews/>
     </div>
   );
 };

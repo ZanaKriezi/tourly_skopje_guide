@@ -39,7 +39,7 @@ const Header: React.FC = () => {
                 to="/login" 
                 className="bg-white text-primary px-4 py-2 rounded font-poppins hover:bg-gray-100 transition-colors"
               >
-                Sign In
+                Log In
               </Link>
               
               <Link 
