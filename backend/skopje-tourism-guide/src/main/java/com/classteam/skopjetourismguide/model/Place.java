@@ -3,6 +3,8 @@ package com.classteam.skopjetourismguide.model;
 import com.classteam.skopjetourismguide.model.enumerations.PlaceType;
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,12 +12,14 @@ import java.util.List;
 @Entity
 @Table(name = "places")
 @Data
+@Getter
+@Setter
 public class Place {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+//    @Column(nullable = false)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -25,26 +29,37 @@ public class Place {
     private PlaceType placeType;
 
     //Google's placeId for unique identification
-    @Column(unique = true, nullable = false)
+    @Column(unique = true, columnDefinition = "TEXT")
     private String googlePlaceId;
 
     private Double latitude;
 
     private Double longitude;
 
+    @Column(columnDefinition = "TEXT")
     private String vicinity;  // Short formatted address returned by Google
 
+    @Column(columnDefinition = "TEXT")
     private String photoReference;  // For Google Photos API
 
     private Boolean openNow;
 
     private Integer userRatingsTotal;
 
+    @Column(columnDefinition = "TEXT")
     private String address;
+
     private String phoneNumber;
+
+    @Column(columnDefinition = "TEXT")
     private String websiteURL;
+
+    @Column(columnDefinition = "TEXT")
     private String socialMedia;
+
     private Float averageRating;
+
+    @Column(columnDefinition = "TEXT")
     private String sentimentTag;
 
     @OneToMany(mappedBy = "place", cascade = CascadeType.ALL, orphanRemoval = true)
