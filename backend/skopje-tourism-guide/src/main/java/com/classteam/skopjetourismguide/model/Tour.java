@@ -30,7 +30,7 @@ public class Tour {
 
     @ManyToMany
     @JoinTable(
-            name = "tour_places",
+            name = "tour_places_skopje",
             joinColumns = @JoinColumn(name = "tour_id"),
             inverseJoinColumns = @JoinColumn(name = "place_id")
     )
