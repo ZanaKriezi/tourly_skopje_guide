@@ -1,26 +1,42 @@
 package com.classteam.skopjetourismguide.service;
 
+import com.classteam.skopjetourismguide.dto.PageResponseDTO;
+import com.classteam.skopjetourismguide.dto.PlaceDTO;
+import com.classteam.skopjetourismguide.dto.PlaceDetailDTO;
 import com.classteam.skopjetourismguide.model.Place;
+import com.classteam.skopjetourismguide.model.Review;
 import com.classteam.skopjetourismguide.model.enumerations.PlaceType;
 import com.classteam.skopjetourismguide.repository.PlaceRepository;
+import com.classteam.skopjetourismguide.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PlacesService {
 
     private final PlaceRepository placeRepository;
+    private final ReviewRepository reviewRepository;
     private final GoogleMapsService googleMapsService;
+    private final DtoMapper dtoMapper;
 
     @Autowired
-    public PlacesService(PlaceRepository placeRepository, GoogleMapsService googleMapsService) {
+    public PlacesService(PlaceRepository placeRepository,
+                         ReviewRepository reviewRepository,
+                         GoogleMapsService googleMapsService,
+                         DtoMapper dtoMapper) {
         this.placeRepository = placeRepository;
+        this.reviewRepository = reviewRepository;
         this.googleMapsService = googleMapsService;
+        this.dtoMapper = dtoMapper;
     }
 
     // Get all places
@@ -28,47 +44,47 @@ public class PlacesService {
         return placeRepository.findAll();
     }
 
-    // Get place by ID
+    // Get place by ID - original method
     public Optional<Place> getPlaceById(Long id) {
         return placeRepository.findById(id);
     }
 
-    // Get places by type
+    // Get places by type - original method
     public List<Place> getPlacesByType(PlaceType placeType) {
         return placeRepository.findByPlaceType(placeType);
     }
 
-    // Get top rated places by type
+    // Get top rated places by type - original method
     public List<Place> getTopRatedPlacesByType(PlaceType placeType) {
         return placeRepository.findTop10ByPlaceTypeOrderByAverageRatingDesc(placeType);
     }
 
-    // Get places by rating
+    // Get places by rating - original method
     public List<Place> getPlacesByMinimumRating(Float rating) {
         return placeRepository.findByAverageRatingGreaterThanEqual(rating);
     }
 
-    // Search places by name
+    // Search places by name - original method
     public List<Place> searchPlacesByName(String name) {
         return placeRepository.findByNameContainingIgnoreCase(name);
     }
 
-    // Search places by address
+    // Search places by address - original method
     public List<Place> searchPlacesByAddress(String address) {
         return placeRepository.findByAddressContainingIgnoreCase(address);
     }
 
-    // Search places by description
+    // Search places by description - original method
     public List<Place> searchPlacesByDescription(String description) {
         return placeRepository.findByDescriptionContainingIgnoreCase(description);
     }
 
-    // Search places by sentiment tag
+    // Search places by sentiment tag - original method
     public List<Place> searchPlacesBySentimentTag(String sentimentTag) {
         return placeRepository.findBySentimentTagContainingIgnoreCase(sentimentTag);
     }
 
-    // Fetch places from Google Maps API and save to database
+    // Fetch places from Google Maps API and save to database - original method
     public List<Place> fetchAndSavePlacesFromGoogle(String type, int radius) {
         Map<String, Object> googleResponse = googleMapsService.getPlacesInSkopje(type, radius);
         List<Place> savedPlaces = new ArrayList<>();
@@ -140,12 +156,12 @@ public class PlacesService {
         return savedPlaces;
     }
 
-    // Create a new place
+    // Create a new place - original method
     public Place createPlace(Place place) {
         return placeRepository.save(place);
     }
 
-    // Update an existing place
+    // Update an existing place - original method
     public Optional<Place> updatePlace(Long id, Place placeDetails) {
         return placeRepository.findById(id).map(place -> {
             if (placeDetails.getName() != null) {
@@ -185,7 +201,7 @@ public class PlacesService {
         });
     }
 
-    // Delete a place
+    // Delete a place - original method
     public boolean deletePlace(Long id) {
         if (placeRepository.existsById(id)) {
             placeRepository.deleteById(id);
@@ -194,7 +210,7 @@ public class PlacesService {
         return false;
     }
 
-    // Helper method to map Google place types to our PlaceType enum
+    // Helper method to map Google place types to our PlaceType enum - original method
     private PlaceType mapGoogleTypeToPlaceType(String googleType) {
         switch (googleType.toLowerCase()) {
             case "tourist_attraction":
@@ -217,7 +233,72 @@ public class PlacesService {
             case "historical_site":
                 return PlaceType.HISTORICAL;
             default:
-                return PlaceType.LANDMARKS; // Default value since you don't have OTHER
+                return PlaceType.LANDMARKS; // Default value
         }
+    }
+
+    //
+    // NEW PAGINATED METHODS WITH DTO SUPPORT
+    //
+
+    // Get all places with pagination
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PlaceDTO> getAllPlacesPaginated(Pageable pageable) {
+        Page<Place> placesPage = placeRepository.findAll(pageable);
+
+        List<PlaceDTO> placeDTOs = placesPage.getContent().stream()
+                .map(dtoMapper::toPlaceDto)
+                .collect(Collectors.toList());
+
+        return dtoMapper.toPageResponse(placesPage, placeDTOs);
+    }
+
+    // Get place by ID with limited reviews
+    @Transactional(readOnly = true)
+    public Optional<PlaceDetailDTO> getPlaceWithLimitedReviews(Long id, int reviewLimit) {
+        // First, get the place with minimal data
+        Optional<Place> placeOpt = placeRepository.findPlaceWithMinimalData(id);
+
+        if (placeOpt.isPresent()) {
+            Place place = placeOpt.get();
+
+            // Fetch limited reviews separately using native query
+            List<Review> recentReviews = placeRepository.findTopNReviewsByPlaceId(id, reviewLimit);
+
+            // Get review count
+            int reviewCount = placeRepository.countReviewsByPlaceId(id);
+
+            // Map to DTO
+            PlaceDetailDTO dto = dtoMapper.toPlaceDetailDto(place, recentReviews);
+            dto.setReviewCount(reviewCount);
+
+            return Optional.of(dto);
+        }
+
+        return Optional.empty();
+    }
+
+    // Get places by type with pagination
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PlaceDTO> getPlacesByTypePaginated(PlaceType placeType, Pageable pageable) {
+        Page<Place> placesPage = placeRepository.findByPlaceType(placeType, pageable);
+
+        List<PlaceDTO> placeDTOs = placesPage.getContent().stream()
+                .map(dtoMapper::toPlaceDto)
+                .collect(Collectors.toList());
+
+        return dtoMapper.toPageResponse(placesPage, placeDTOs);
+    }
+
+    // Search places by name with pagination
+    @Transactional(readOnly = true)
+    public PageResponseDTO<PlaceDTO> searchPlacesByNamePaginated(String name, Pageable pageable) {
+        Page<Place> placesPage = placeRepository.findByNameContainingIgnoreCase(name, pageable);
+
+        List<PlaceDTO> placeDTOs = placesPage.getContent().stream()
+                .map(dtoMapper::toPlaceDto)
+                .collect(Collectors.toList());
+
+        return dtoMapper.toPageResponse(placesPage, placeDTOs);
     }
 }

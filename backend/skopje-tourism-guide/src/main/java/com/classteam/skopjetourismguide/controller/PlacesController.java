@@ -1,9 +1,17 @@
 package com.classteam.skopjetourismguide.controller;
 
+import com.classteam.skopjetourismguide.dto.PageResponseDTO;
+import com.classteam.skopjetourismguide.dto.PlaceDTO;
+import com.classteam.skopjetourismguide.dto.PlaceDetailDTO;
+import com.classteam.skopjetourismguide.dto.ReviewDTO;
 import com.classteam.skopjetourismguide.model.Place;
 import com.classteam.skopjetourismguide.model.enumerations.PlaceType;
 import com.classteam.skopjetourismguide.service.PlacesService;
+import com.classteam.skopjetourismguide.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,27 +24,33 @@ import java.util.List;
 public class PlacesController {
 
     private final PlacesService placesService;
+    private final ReviewService reviewService;
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int DEFAULT_REVIEW_PREVIEW_SIZE = 3;
 
     @Autowired
-    public PlacesController(PlacesService placesService) {
+    public PlacesController(PlacesService placesService, ReviewService reviewService) {
         this.placesService = placesService;
+        this.reviewService = reviewService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Place>> getAllPlaces() {
+    // ORIGINAL ENDPOINTS (For backward compatibility)
+
+    @GetMapping("/legacy")
+    public ResponseEntity<List<Place>> getAllPlacesLegacy() {
         List<Place> places = placesService.getAllPlaces();
         return ResponseEntity.ok(places);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Place> getPlaceById(@PathVariable Long id) {
+    @GetMapping("/legacy/{id}")
+    public ResponseEntity<Place> getPlaceByIdLegacy(@PathVariable Long id) {
         return placesService.getPlaceById(id)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @GetMapping("/type/{placeType}")
-    public ResponseEntity<List<Place>> getPlacesByType(@PathVariable String placeType) {
+    @GetMapping("/legacy/type/{placeType}")
+    public ResponseEntity<List<Place>> getPlacesByTypeLegacy(@PathVariable String placeType) {
         try {
             PlaceType type = PlaceType.valueOf(placeType.toUpperCase());
             List<Place> places = placesService.getPlacesByType(type);
@@ -46,8 +60,8 @@ public class PlacesController {
         }
     }
 
-    @GetMapping("/top-rated/{placeType}")
-    public ResponseEntity<List<Place>> getTopRatedPlacesByType(@PathVariable String placeType) {
+    @GetMapping("/legacy/top-rated/{placeType}")
+    public ResponseEntity<List<Place>> getTopRatedPlacesByTypeLegacy(@PathVariable String placeType) {
         try {
             PlaceType type = PlaceType.valueOf(placeType.toUpperCase());
             List<Place> places = placesService.getTopRatedPlacesByType(type);
@@ -57,14 +71,14 @@ public class PlacesController {
         }
     }
 
-    @GetMapping("/rating/{minRating}")
-    public ResponseEntity<List<Place>> getPlacesByMinimumRating(@PathVariable Float minRating) {
+    @GetMapping("/legacy/rating/{minRating}")
+    public ResponseEntity<List<Place>> getPlacesByMinimumRatingLegacy(@PathVariable Float minRating) {
         List<Place> places = placesService.getPlacesByMinimumRating(minRating);
         return ResponseEntity.ok(places);
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<List<Place>> searchPlaces(
+    @GetMapping("/legacy/search")
+    public ResponseEntity<List<Place>> searchPlacesLegacy(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String address,
             @RequestParam(required = false) String description,
@@ -83,8 +97,8 @@ public class PlacesController {
         }
     }
 
-    @GetMapping("/fetch-from-google")
-    public ResponseEntity<List<Place>> fetchPlacesFromGoogle(
+    @GetMapping("/legacy/fetch-from-google")
+    public ResponseEntity<List<Place>> fetchPlacesFromGoogleLegacy(
             @RequestParam(defaultValue = "tourist_attraction") String type,
             @RequestParam(defaultValue = "5000") int radius) {
         List<Place> places = placesService.fetchAndSavePlacesFromGoogle(type, radius);
@@ -112,5 +126,84 @@ public class PlacesController {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    // NEW OPTIMIZED ENDPOINTS WITH PAGINATION AND DTOS
+
+    @GetMapping
+    public ResponseEntity<PageResponseDTO<PlaceDTO>> getAllPlaces(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        PageResponseDTO<PlaceDTO> response = placesService.getAllPlacesPaginated(pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<PlaceDetailDTO> getPlaceById(
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "3") int previewReviews) {
+
+        return placesService.getPlaceWithLimitedReviews(id, previewReviews)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @GetMapping("/type/{placeType}")
+    public ResponseEntity<PageResponseDTO<PlaceDTO>> getPlacesByType(
+            @PathVariable String placeType,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        try {
+            PlaceType type = PlaceType.valueOf(placeType.toUpperCase());
+            Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+            Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+            PageResponseDTO<PlaceDTO> response = placesService.getPlacesByTypePaginated(type, pageable);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<PageResponseDTO<PlaceDTO>> searchPlaces(
+            @RequestParam(required = false) String name,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "asc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        if (name != null && !name.isEmpty()) {
+            return ResponseEntity.ok(placesService.searchPlacesByNamePaginated(name, pageable));
+        } else {
+            return ResponseEntity.ok(placesService.getAllPlacesPaginated(pageable));
+        }
+    }
+
+    // Add the dedicated reviews endpoint
+    @GetMapping("/{placeId}/reviews")
+    public ResponseEntity<PageResponseDTO<ReviewDTO>> getPlaceReviews(
+            @PathVariable Long placeId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "timestamp") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
+        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+        return ResponseEntity.ok(reviewService.getReviewsByPlaceId(placeId, pageable));
     }
 }

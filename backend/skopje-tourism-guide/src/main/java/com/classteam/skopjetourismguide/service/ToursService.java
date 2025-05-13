@@ -295,7 +295,6 @@ public class ToursService {
                     placeDTO.setLatitude(place.getLatitude());
                     placeDTO.setLongitude(place.getLongitude());
                     placeDTO.setAverageRating(place.getAverageRating());
-                    placeDTO.setSentimentTag(place.getSentimentTag());
                     placeDTO.setPhotoReference(place.getPhotoReference());
                     return placeDTO;
                 })

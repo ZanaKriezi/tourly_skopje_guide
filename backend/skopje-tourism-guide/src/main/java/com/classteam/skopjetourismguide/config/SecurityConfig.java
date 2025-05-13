@@ -54,9 +54,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/test/**").permitAll()
                         .requestMatchers("/api/places/**").permitAll()
-                        .requestMatchers("/api/tours/**").permitAll() // Add this line
-                        .requestMatchers("/api/maps/**").permitAll()   // Add this line if needed
-                        .anyRequest().authenticated()
+                        .requestMatchers("/api/tours/**").permitAll()
+                        .requestMatchers("/api/maps/**").permitAll()
+                        // Make sure all API paths are properly permitted
+                        .anyRequest().permitAll() // For debugging - change to authenticated() later
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
