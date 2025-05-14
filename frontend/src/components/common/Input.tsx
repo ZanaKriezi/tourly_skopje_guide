@@ -1,3 +1,4 @@
+// src/components/common/Input.tsx
 import React, { forwardRef } from 'react';
 
 export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -17,13 +18,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
 }, ref) => {
   const inputId = id || `input-${label?.toLowerCase().replace(/\s+/g, '-')}`;
   const widthStyle = fullWidth ? 'w-full' : '';
-  const errorStyle = error ? 'border-red-400 focus:ring-red-500' : 'border-neutral focus:ring-primary';
+  const errorStyle = error ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-primary';
   const disabledStyle = disabled ? 'bg-gray-100 cursor-not-allowed' : '';
   
   return (
     <div className={`mb-4 ${widthStyle}`}>
       {label && (
-        <label htmlFor={inputId} className="block font-poppins font-medium mb-2 text-text">
+        <label htmlFor={inputId} className="block font-medium mb-1 text-gray-700">
           {label}
           {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
@@ -31,7 +32,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       <input
         ref={ref}
         id={inputId}
-        className={`w-full px-4 py-3 h-12 border rounded ${errorStyle} ${disabledStyle} focus:outline-none focus:ring-2 ${className}`}
+        className={`px-4 py-2 border rounded ${errorStyle} ${disabledStyle} focus:outline-none focus:ring-2 ${className}`}
         disabled={disabled}
         {...props}
       />

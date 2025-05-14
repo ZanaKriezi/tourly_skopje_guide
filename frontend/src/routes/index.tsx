@@ -1,0 +1,35 @@
+// src/routes/index.tsx
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import HomePage from '../pages/HomePage';
+import LoginPage from '../pages/LoginPage';
+import RegisterPage from '../pages/RegisterPage';
+import PlacesPage from '../pages/PlacesPage';
+import PlaceDetailsPage from '../pages/PlaceDetailsPage';
+import ToursPage from '../pages/ToursPage';
+import PageLayout from '../components/layout/PageLayout';
+import ProtectedRoute from './ProtectedRoute';
+
+const AppRoutes: React.FC = () => {
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<PageLayout><HomePage /></PageLayout>} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/places" element={<PageLayout><PlacesPage /></PageLayout>} />
+      <Route path="/places/:id" element={<PageLayout><PlaceDetailsPage /></PageLayout>} />
+      <Route path="/tours" element={<PageLayout><ToursPage /></PageLayout>} />
+      
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute />}>
+        {/* Add protected routes here */}
+      </Route>
+      
+      {/* Catch all route */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+};
+
+export default AppRoutes;

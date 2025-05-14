@@ -1,71 +1,54 @@
-import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
-import ApiService from '../services/api';
-import { User, RegisterRequest } from '../types/auth';
+// src/context/AuthContext.tsx
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { User } from '../types/auth';
+import * as authService from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
-  register: (registerData: RegisterRequest) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  loading: boolean;
+  isLoading: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
+  isAuthenticated: false,
+  isAdmin: false,
+  isLoading: true,
   login: async () => {},
   register: async () => {},
   logout: () => {},
-  isAuthenticated: false,
-  isAdmin: false,
-  loading: true,
 });
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+export const useAuth = () => useContext(AuthContext);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Check if user is already logged in
-    const currentUser = ApiService.auth.getCurrentUser();
+    const currentUser = authService.getCurrentUser();
     if (currentUser) {
-      setUser({
-        id: currentUser.id,
-        username: currentUser.username,
-        email: currentUser.email,
-        role: currentUser.role,
-        token: currentUser.token,
-        name: currentUser.name,
-        surname: currentUser.surname,
-      });
+      setUser(currentUser);
     }
-    setLoading(false);
+    setIsLoading(false);
   }, []);
 
   const login = async (username: string, password: string): Promise<void> => {
-    const data = await ApiService.auth.login(username, password);
-    setUser({
-      id: data.id,
-      username: data.username,
-      email: data.email,
-      role: data.role,
-      token: data.token,
-      name: data.name,
-      surname: data.surname,
-    });
+    const loggedInUser = await authService.login({ username, password });
+    setUser(loggedInUser);
   };
 
-  const register = async (registerData: RegisterRequest): Promise<void> => {
-    await ApiService.auth.register(registerData);
+  const register = async (username: string, email: string, password: string): Promise<void> => {
+    await authService.register({ username, email, password });
   };
 
   const logout = (): void => {
-    ApiService.auth.logout();
+    authService.logout();
     setUser(null);
   };
 
@@ -76,17 +59,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
+        isAuthenticated,
+        isAdmin,
+        isLoading,
         login,
         register,
         logout,
-        isAuthenticated,
-        isAdmin,
-        loading,
       }}
     >
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = (): AuthContextType => useContext(AuthContext);

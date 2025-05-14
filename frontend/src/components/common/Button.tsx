@@ -1,6 +1,7 @@
+// src/components/common/Button.tsx
 import React from 'react';
 
-type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'outline';
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'text';
 type ButtonSize = 'sm' | 'md' | 'lg';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -21,21 +22,25 @@ const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'font-poppins font-medium rounded transition-colors';
+  // Base styles
+  const baseStyles = 'font-medium rounded transition-colors focus:outline-none';
   
+  // Variant styles
   const variantStyles = {
-    primary: 'bg-primary text-white hover:bg-secondary',
-    secondary: 'bg-secondary text-white hover:bg-primary',
-    accent: 'bg-accent text-white hover:bg-opacity-90',
-    outline: 'bg-white text-primary border border-primary hover:bg-gray-100',
+    primary: 'bg-primary text-white hover:bg-primary/90',
+    secondary: 'bg-secondary text-white hover:bg-secondary/90',
+    outline: 'bg-transparent border border-primary text-primary hover:bg-primary/10',
+    text: 'bg-transparent text-primary hover:bg-primary/10',
   };
   
+  // Size styles
   const sizeStyles = {
     sm: 'px-3 py-1 text-sm',
     md: 'px-4 py-2',
     lg: 'px-6 py-3 text-lg',
   };
   
+  // Other conditional styles
   const widthStyle = fullWidth ? 'w-full' : '';
   const disabledStyle = disabled || isLoading ? 'opacity-70 cursor-not-allowed' : '';
   
