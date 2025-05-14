@@ -1,0 +1,29 @@
+package com.classteam.skopjetourismguide.service;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ScheduledAIService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ScheduledAIService.class);
+
+    private final PlaceAIService placeAIService;
+
+    public ScheduledAIService(PlaceAIService placeAIService) {
+        this.placeAIService = placeAIService;
+    }
+
+    /**
+     * Update place descriptions and sentiment tags weekly
+     * Runs every 7 days
+     */
+    @Scheduled(fixedRate = 7 * 24 * 60 * 60 * 1000) // Every 7 days in milliseconds
+    public void updatePlaceEnhancements() {
+        logger.info("Starting scheduled update of place descriptions and sentiment tags");
+        placeAIService.processAllPlaces();
+        logger.info("Completed scheduled update of place descriptions and sentiment tags");
+    }
+}
