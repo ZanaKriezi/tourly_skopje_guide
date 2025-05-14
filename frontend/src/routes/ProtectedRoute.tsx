@@ -2,7 +2,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import PageLayout from '../components/layout/PageLayout';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 
 interface ProtectedRouteProps {
   requireAdmin?: boolean;
@@ -15,11 +15,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (isLoading) {
     return (
-      <PageLayout>
-        <div className="flex justify-center items-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-        </div>
-      </PageLayout>
+      <div className="flex justify-center items-center h-screen">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
     );
   }
 
@@ -31,11 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return <Navigate to="/" />;
   }
 
-  return (
-    <PageLayout>
-      <Outlet />
-    </PageLayout>
-  );
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

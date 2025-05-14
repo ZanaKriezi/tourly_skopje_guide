@@ -9,6 +9,7 @@ import PlaceDetailsPage from '../pages/PlaceDetailsPage';
 import ToursPage from '../pages/ToursPage';
 import PageLayout from '../components/layout/PageLayout';
 import ProtectedRoute from './ProtectedRoute';
+import ProfilePage from '../pages/ProfilePage';
 
 const AppRoutes: React.FC = () => {
   return (
@@ -20,7 +21,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/places" element={<PageLayout><PlacesPage /></PageLayout>} />
       <Route path="/places/:id" element={<PageLayout><PlaceDetailsPage /></PageLayout>} />
       <Route path="/tours" element={<PageLayout><ToursPage /></PageLayout>} />
-      
+      <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
+
       {/* Protected routes */}
       <Route element={<ProtectedRoute />}>
         {/* Add protected routes here */}

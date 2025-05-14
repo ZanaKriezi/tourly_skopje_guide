@@ -1,57 +1,87 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import Button from '../common/Button';
+// src/components/layout/Navbar.tsx
+import React, { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
+import Button from "../common/Button";
 
 const Navbar: React.FC = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, logout, isAuthenticated } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
+  const { user, isAuthenticated, logout } = useAuth();
   const location = useLocation();
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
-  const closeMenu = () => setIsMenuOpen(false);
-  const handleLogout = () => {
+  const toggleMenu = (): void => setIsMenuOpen(!isMenuOpen);
+  const closeMenu = (): void => setIsMenuOpen(false);
+
+  const handleLogout = (): void => {
     logout();
     closeMenu();
   };
 
-  const isActive = (path: string) => location.pathname === path;
+  const isActive = (path: string): boolean => location.pathname === path;
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-primary shadow-md">
+    <nav className="bg-primary text-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-3">
         <div className="flex justify-between items-center">
           {/* Logo and Brand */}
           <Link to="/" className="flex items-center" onClick={closeMenu}>
-            <span className="font-montserrat text-xl font-bold text-white">
-              Skopje Tourism Guide
-            </span>
+            <span className="font-bold text-xl">Skopje Tourism Guide</span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <div className="flex space-x-6">
-              <NavLink to="/" active={isActive('/')}>Home</NavLink>
-              <NavLink to="/places" active={isActive('/places')}>Places</NavLink>
-              <NavLink to="/tours" active={isActive('/tours')}>Tours</NavLink>
-              <NavLink to="/about" active={isActive('/about')}>About</NavLink>
+              <NavLink to="/" active={isActive("/")}>
+                Home
+              </NavLink>
+              <NavLink to="/places" active={isActive("/places")}>
+                Places
+              </NavLink>
+              <NavLink to="/tours" active={isActive("/tours")}>
+                Tours
+              </NavLink>
             </div>
 
             {/* Authentication Buttons */}
             <div className="flex space-x-3">
               {isAuthenticated ? (
                 <div className="flex items-center space-x-3">
-                  <span className="font-poppins text-white">
-                    Hi, {user?.name || user?.username}
+                  <span className="text-white">
+                    {user?.name ? `Hi, ${user.name}` : `Hi, ${user?.username}`}
                   </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleLogout}
-                    className="text-white border-white hover:bg-white hover:bg-opacity-10"
-                  >
-                    Sign Out
-                  </Button>
+                  <div className="relative group">
+                    <button className="flex items-center space-x-1 focus:outline-none">
+                      <span>My Account</span>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </button>
+                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
+                      <Link
+                        to="/profile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Profile
+                      </Link>
+                      {/* Add other account-related links here */}
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <>
@@ -59,13 +89,17 @@ const Navbar: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-black border-white hover:bg-white hover:bg-opacity-10"
+                      className="text-white border-white hover:bg-white/10"
                     >
                       Log In
                     </Button>
                   </Link>
                   <Link to="/register">
-                    <Button variant="accent" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="bg-white text-primary hover:bg-white/90"
+                    >
                       Register
                     </Button>
                   </Link>
@@ -101,25 +135,47 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden mt-3 py-3 border-t border-white border-opacity-20">
+          <div className="md:hidden mt-3 py-3 border-t border-white/20">
             <div className="flex flex-col space-y-3">
-              <MobileNavLink to="/" active={isActive('/')} onClick={closeMenu}>Home</MobileNavLink>
-              <MobileNavLink to="/places" active={isActive('/places')} onClick={closeMenu}>Places</MobileNavLink>
-              <MobileNavLink to="/tours" active={isActive('/tours')} onClick={closeMenu}>Tours</MobileNavLink>
-              <MobileNavLink to="/about" active={isActive('/about')} onClick={closeMenu}>About</MobileNavLink>
+              <MobileNavLink to="/" active={isActive("/")} onClick={closeMenu}>
+                Home
+              </MobileNavLink>
+              <MobileNavLink
+                to="/places"
+                active={isActive("/places")}
+                onClick={closeMenu}
+              >
+                Places
+              </MobileNavLink>
+              <MobileNavLink
+                to="/tours"
+                active={isActive("/tours")}
+                onClick={closeMenu}
+              >
+                Tours
+              </MobileNavLink>
             </div>
 
             {/* Mobile Authentication */}
-            <div className="mt-4 pt-4 border-t border-white border-opacity-20 flex flex-col space-y-2">
+            <div className="mt-4 pt-4 border-t border-white/20 flex flex-col space-y-2">
               {isAuthenticated ? (
                 <>
-                  <span className="font-poppins text-white mb-2">
-                    Hi, {user?.name || user?.username}
+                  <span className="text-white mb-2">
+                    {user?.name ? `Hi, ${user.name}` : `Hi, ${user?.username}`}
                   </span>
+                  <Link to="/profile" onClick={closeMenu}>
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      className="text-white border-white hover:bg-white/10 mb-2"
+                    >
+                      Profile
+                    </Button>
+                  </Link>
                   <Button
                     variant="outline"
                     fullWidth
-                    className="text-white border-white hover:bg-white hover:bg-opacity-10"
+                    className="text-white border-white hover:bg-white/10"
                     onClick={handleLogout}
                   >
                     Sign Out
@@ -131,13 +187,17 @@ const Navbar: React.FC = () => {
                     <Button
                       variant="outline"
                       fullWidth
-                      className="text-white border-white hover:bg-white hover:bg-opacity-10"
+                      className="text-white border-white hover:bg-white/10"
                     >
                       Log In
                     </Button>
                   </Link>
                   <Link to="/register" onClick={closeMenu}>
-                    <Button variant="accent" fullWidth>
+                    <Button
+                      variant="outline"
+                      fullWidth
+                      className="bg-white text-primary hover:bg-white/90"
+                    >
                       Register
                     </Button>
                   </Link>
@@ -161,8 +221,8 @@ interface NavLinkProps {
 const NavLink: React.FC<NavLinkProps> = ({ to, active, children }) => (
   <Link
     to={to}
-    className={`font-poppins text-white transition-colors hover:text-white/80 ${
-      active ? 'font-semibold border-b-2 border-white' : ''
+    className={`transition-colors hover:text-white/80 ${
+      active ? "font-semibold border-b-2 border-white" : ""
     }`}
   >
     {children}
@@ -173,11 +233,16 @@ interface MobileNavLinkProps extends NavLinkProps {
   onClick: () => void;
 }
 
-const MobileNavLink: React.FC<MobileNavLinkProps> = ({ to, active, onClick, children }) => (
+const MobileNavLink: React.FC<MobileNavLinkProps> = ({
+  to,
+  active,
+  onClick,
+  children,
+}) => (
   <Link
     to={to}
-    className={`font-poppins py-2 text-white transition-colors hover:text-white/80 ${
-      active ? 'font-semibold' : ''
+    className={`py-2 transition-colors hover:text-white/80 ${
+      active ? "font-semibold" : ""
     }`}
     onClick={onClick}
   >

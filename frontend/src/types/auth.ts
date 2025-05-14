@@ -6,7 +6,6 @@ export interface User {
   role: string;
   name?: string;
   surname?: string;
-  token?: string;
 }
 
 export interface AuthResponse {
@@ -33,4 +32,8 @@ export interface RegisterRequest {
   surname?: string;
   age?: number;
   gender?: string;
+}
+
+export interface MessageResponse {
+  message: string;
 }
