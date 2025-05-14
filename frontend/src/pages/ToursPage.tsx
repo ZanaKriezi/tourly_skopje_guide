@@ -13,6 +13,7 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import ErrorMessage from "../components/common/ErrorMessage";
 import TourCard from "../components/tours/TourCard";
 import PreferenceForm from "../components/tours/PreferenceForm";
+import { Link } from "react-router-dom";
 
 enum TourCreationStep {
   NONE,
@@ -56,14 +57,16 @@ const ToursPage: React.FC = () => {
 
   // Handle starting the tour creation process
   const handleStartCreation = (): void => {
-    if (!isAuthenticated) {
-      setCreationError("You must be logged in to create a tour.");
-      return;
-    }
-
-    setCreationStep(TourCreationStep.PREFERENCES);
-    setCreationError(null);
-  };
+  console.log("Start creation clicked"); // Add this for debugging
+  
+  if (!isAuthenticated) {
+    setCreationError('You must be logged in to create a tour.');
+    return;
+  }
+  
+  setCreationStep(TourCreationStep.PREFERENCES);
+  setCreationError(null);
+};
 
   // Handle saving preferences
   const handlePreferencesSave = (preference: PreferenceDTO): void => {
@@ -178,34 +181,39 @@ const ToursPage: React.FC = () => {
 
       {/* Tour Creation Button */}
       {creationStep === TourCreationStep.NONE && (
-        <div className="bg-white p-6 rounded-lg shadow-md mb-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-semibold mb-1">
-                Create Your Own Tour
-              </h2>
-              <p className="text-gray-600">
-                Customize a tour based on your preferences and interests
-              </p>
-            </div>
-            <Button onClick={handleStartCreation}>Create Tour</Button>
-          </div>
-
-          {creationError && !isAuthenticated && (
-            <div className="mt-4 text-red-600">
-              {creationError}{" "}
-              <a href="/login" className="underline">
-                Log in
-              </a>{" "}
-              to continue.
-            </div>
-          )}
-
-          {creationError && isAuthenticated && (
-            <div className="mt-4 text-red-600">{creationError}</div>
-          )}
-        </div>
-      )}
+  <div className="bg-white p-6 rounded-lg shadow-xl mb-6">
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <h2 className="text-xl font-display font-semibold mb-2">Create Your Own Tour</h2>
+        <p className="text-gray-600">
+          Customize a tour based on your preferences and interests
+        </p>
+      </div>
+      <div>
+        <Button 
+          variant="primary"
+          size="lg"
+          onClick={handleStartCreation}
+          className="w-full md:w-auto"
+        >
+          Create Tour
+        </Button>
+      </div>
+    </div>
+    
+    {creationError && !isAuthenticated && (
+      <div className="mt-4 text-danger-600">
+        {creationError} <Link to="/login" className="underline font-medium">Log in</Link> to continue.
+      </div>
+    )}
+    
+    {creationError && isAuthenticated && (
+      <div className="mt-4 text-danger-600">
+        {creationError}
+      </div>
+    )}
+  </div>
+)}
 
       {/* Tour Creation Form */}
       {renderCreationStep()}

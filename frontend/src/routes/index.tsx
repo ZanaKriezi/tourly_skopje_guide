@@ -19,9 +19,10 @@ const AppRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Public routes */}
-      <Route path="/" element={<PageLayout><HomePage /></PageLayout>} />
+      <Route path="/" element={<PageLayout withTopPadding={false}><HomePage /></PageLayout>} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      {/* Ensure these routes use PageLayout */}
       <Route path="/places" element={<PageLayout><PlacesPage /></PageLayout>} />
       <Route path="/places/search" element={<PageLayout><PlacesSearchPage /></PageLayout>} />
       <Route path="/places/:id" element={<PageLayout><PlaceDetailsPage /></PageLayout>} />
@@ -33,7 +34,6 @@ const AppRoutes: React.FC = () => {
         <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
         <Route path="/tours/:id/edit" element={<PageLayout><TourEditPage /></PageLayout>} />
         <Route path="/my-reviews" element={<PageLayout><UserReviewsPage /></PageLayout>} />
-        {/* Add other protected routes here */}
       </Route>
       
       {/* Catch all route */}
