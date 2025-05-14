@@ -1,12 +1,11 @@
-import { BaseEntity } from './common';
-
-export interface User extends BaseEntity {
+// src/types/auth.ts
+export interface User {
+  id: number;
   username: string;
   email: string;
   role: string;
   name?: string;
   surname?: string;
-  token?: string;
 }
 
 export interface AuthResponse {

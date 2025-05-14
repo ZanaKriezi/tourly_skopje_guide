@@ -1,25 +1,29 @@
+// Place.java
 package com.classteam.skopjetourismguide.model;
 
 import com.classteam.skopjetourismguide.model.enumerations.PlaceType;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "places_skopje")
-@Data
-@Getter
-@Setter
+@Getter @Setter
+@ToString(exclude = {"reviews", "tours"}) // Prevent toString() recursion
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Place {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-//    @Column(nullable = false)
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -28,7 +32,6 @@ public class Place {
     @Enumerated(EnumType.STRING)
     private PlaceType placeType;
 
-    //Google's placeId for unique identification
     @Column(unique = true, columnDefinition = "TEXT")
     private String googlePlaceId;
 
@@ -37,10 +40,10 @@ public class Place {
     private Double longitude;
 
     @Column(columnDefinition = "TEXT")
-    private String vicinity;  // Short formatted address returned by Google
+    private String vicinity;
 
     @Column(columnDefinition = "TEXT")
-    private String photoReference;  // For Google Photos API
+    private String photoReference;
 
     private Boolean openNow;
 
@@ -63,9 +66,11 @@ public class Place {
     private String sentimentTag;
 
     @OneToMany(mappedBy = "place", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("place")
     private List<Review> reviews = new ArrayList<>();
 
     @ManyToMany(mappedBy = "places")
+    @JsonIgnoreProperties("places")
     private List<Tour> tours = new ArrayList<>();
 
     // Default constructor required by JPA
@@ -81,4 +86,16 @@ public class Place {
         this.averageRating = averageRating;
         this.sentimentTag = sentimentTag;
     }
+
+    // Helper methods to maintain bidirectional relationship
+    public void addReview(Review review) {
+        reviews.add(review);
+        review.setPlace(this);
+    }
+
+    public void removeReview(Review review) {
+        reviews.remove(review);
+        review.setPlace(null);
+    }
 }
+

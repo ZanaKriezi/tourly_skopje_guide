@@ -1,77 +1,119 @@
-import React, { useState, FormEvent } from 'react';
+// src/components/auth/LoginForm.tsx
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AxiosError } from 'axios';
 import { useAuth } from '../../context/AuthContext';
+import { LoginRequest } from '../../types/auth';
 import Input from '../common/Input';
 import Button from '../common/Button';
-import Alert from '../common/Alert';
+import ErrorMessage from '../common/ErrorMessage';
 
 const LoginForm: React.FC = () => {
-  const [username, setUsername] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  const { login } = useAuth();
+  const [formData, setFormData] = useState<LoginRequest>({
+    username: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  const { login, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+  // Handle form input changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
+    const { name, value } = e.target;
+    
+    // Clear field-specific error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
+    // Clear auth error when user makes any change
+    if (authError) {
+      clearError();
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Validate form before submission
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+    
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
-    // Simple validation
-    if (!username.trim() || !password.trim()) {
-      setError('Username and password are required');
+    if (!validateForm()) {
       return;
     }
     
     try {
-      setIsLoading(true);
-      setError(null);
-      await login(username, password);
-      navigate('/'); // Redirect to home page after login
+      setIsSubmitting(true);
+      await login(formData);
+      navigate('/'); // Redirect to home on success
     } catch (err) {
-      const axiosError = err as AxiosError<{ message: string }>;
-      setError(
-        axiosError.response?.data?.message || 
-        'Login failed. Please check your credentials.'
-      );
+      // Error is already set in auth context
+      console.error('Login error:', err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {error && (
-        <Alert type="error" message={error} className="mb-4" />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {authError && (
+        <ErrorMessage message={authError} />
       )}
       
       <Input
         label="Username"
-        type="text"
-        id="username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        disabled={isLoading}
+        name="username"
+        value={formData.username}
+        onChange={handleChange}
+        error={errors.username}
+        required
+        disabled={isSubmitting}
       />
       
       <Input
         label="Password"
         type="password"
-        id="password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        disabled={isLoading}
+        name="password"
+        value={formData.password}
+        onChange={handleChange}
+        error={errors.password}
+        required
+        disabled={isSubmitting}
       />
       
-      <Button
-        type="submit"
-        variant="primary"
-        fullWidth
-        isLoading={isLoading}
-      >
-        Log In
-      </Button>
+      <div className="pt-2">
+        <Button
+          type="submit"
+          fullWidth
+          isLoading={isSubmitting}
+        >
+          Log In
+        </Button>
+      </div>
     </form>
   );
 };

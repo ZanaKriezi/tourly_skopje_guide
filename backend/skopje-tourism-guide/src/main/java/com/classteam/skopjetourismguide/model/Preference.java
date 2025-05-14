@@ -1,3 +1,4 @@
+// Preference.java
 package com.classteam.skopjetourismguide.model;
 
 import com.classteam.skopjetourismguide.model.enumerations.AttractionType;
@@ -5,15 +6,23 @@ import com.classteam.skopjetourismguide.model.enumerations.BudgetLevel;
 import com.classteam.skopjetourismguide.model.enumerations.DrinkType;
 import com.classteam.skopjetourismguide.model.enumerations.FoodType;
 import com.classteam.skopjetourismguide.model.enumerations.TourLength;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIdentityReference;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "preferences")
-@Data
+@Getter @Setter
+@ToString(exclude = {"user", "tours"}) // Prevent toString() recursion
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Preference {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -49,8 +58,21 @@ public class Preference {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
+    @JsonIdentityReference(alwaysAsId = true) // Only use the ID for serialization
     private User user;
 
     @OneToMany(mappedBy = "preference", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties("preference")
     private List<Tour> tours = new ArrayList<>();
+
+    // Helper methods
+    public void addTour(Tour tour) {
+        tours.add(tour);
+        tour.setPreference(this);
+    }
+
+    public void removeTour(Tour tour) {
+        tours.remove(tour);
+        tour.setPreference(null);}
 }

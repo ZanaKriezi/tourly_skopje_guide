@@ -1,92 +1,119 @@
-import React, { createContext, useState, useEffect, ReactNode, useContext } from 'react';
-import ApiService from '../services/api';
-import { User, RegisterRequest } from '../types/auth';
+// src/context/AuthContext.tsx
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
+import { User, RegisterRequest, LoginRequest } from '../types/auth';
+import * as authService from '../services/authService';
 
 interface AuthContextType {
   user: User | null;
-  login: (username: string, password: string) => Promise<void>;
-  register: (registerData: RegisterRequest) => Promise<void>;
-  logout: () => void;
   isAuthenticated: boolean;
   isAdmin: boolean;
-  loading: boolean;
+  isLoading: boolean;
+  login: (credentials: LoginRequest) => Promise<User>;
+  register: (userData: RegisterRequest) => Promise<void>;
+  logout: () => void;
+  error: string | null;
+  clearError: () => void;
 }
 
+// Create context with default values
 const AuthContext = createContext<AuthContextType>({
   user: null,
-  login: async () => {},
-  register: async () => {},
-  logout: () => {},
   isAuthenticated: false,
   isAdmin: false,
-  loading: true,
+  isLoading: true,
+  login: async () => { throw new Error('Not implemented'); },
+  register: async () => { throw new Error('Not implemented'); },
+  logout: () => {},
+  error: null,
+  clearError: () => {},
 });
 
-interface AuthProviderProps {
-  children: ReactNode;
-}
+export const useAuth = (): AuthContextType => useContext(AuthContext);
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
+  // Initialize auth state on component mount
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = ApiService.auth.getCurrentUser();
-    if (currentUser) {
-      setUser({
-        id: currentUser.id,
-        username: currentUser.username,
-        email: currentUser.email,
-        role: currentUser.role,
-        token: currentUser.token,
-        name: currentUser.name,
-        surname: currentUser.surname,
-      });
-    }
-    setLoading(false);
+    const initAuth = (): void => {
+      try {
+        const currentUser = authService.getCurrentUser();
+        setUser(currentUser);
+      } catch (err) {
+        // Handle any errors during initialization
+        console.error('Auth initialization error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initAuth();
   }, []);
 
-  const login = async (username: string, password: string): Promise<void> => {
-    const data = await ApiService.auth.login(username, password);
-    setUser({
-      id: data.id,
-      username: data.username,
-      email: data.email,
-      role: data.role,
-      token: data.token,
-      name: data.name,
-      surname: data.surname,
-    });
+  // Login handler
+  const login = async (credentials: LoginRequest): Promise<User> => {
+    try {
+      setError(null);
+      const loggedInUser = await authService.login(credentials);
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Login failed. Please check your credentials.';
+      setError(errorMessage);
+      throw err;
+    }
   };
 
-  const register = async (registerData: RegisterRequest): Promise<void> => {
-    await ApiService.auth.register(registerData);
+  // Register handler
+  const register = async (userData: RegisterRequest): Promise<void> => {
+    try {
+      setError(null);
+      await authService.register(userData);
+    } catch (err) {
+      const errorMessage = err instanceof Error 
+        ? err.message 
+        : 'Registration failed. Please try again.';
+      setError(errorMessage);
+      throw err;
+    }
   };
 
-  const logout = (): void => {
-    ApiService.auth.logout();
+  // Logout handler
+  const logout = useCallback((): void => {
+    authService.logout();
     setUser(null);
-  };
+    setError(null);
+  }, []);
 
+  // Clear error state
+  const clearError = useCallback((): void => {
+    setError(null);
+  }, []);
+
+  // Derived states
   const isAuthenticated = !!user;
   const isAdmin = user?.role === 'ROLE_ADMIN';
 
+  // Context value
+  const contextValue: AuthContextType = {
+    user,
+    isAuthenticated,
+    isAdmin,
+    isLoading,
+    login,
+    register,
+    logout,
+    error,
+    clearError,
+  };
+
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        login,
-        register,
-        logout,
-        isAuthenticated,
-        isAdmin,
-        loading,
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = (): AuthContextType => useContext(AuthContext);

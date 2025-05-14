@@ -1,170 +1,309 @@
-import React, { useState, useEffect } from 'react';
-import { LoadingState } from '../types/common';
-import { Place, PlaceType } from '../types/places';
+// src/pages/HomePage.tsx
+import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { usePlaces } from '../context/PlacesContext';
+import { PlaceType } from '../types/places';
+import Button from '../components/common/Button';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import HeroSection from '../components/home/HeroSection';
-import CategorySection, { Category } from '../components/home/CategorySection';
-import FeaturedPlaces from '../components/home/FeaturedPlaces';
-import LocalTips from '../components/home/LocalTips';
-import Reviews from '../components/home/Reviews';
+import PlaceCard from '../components/places/PlaceCard';
+import { 
+  MapPin, 
+  Coffee, 
+  Utensils, 
+  Building, 
+  Landmark, 
+  Search, 
+  ChevronRight,
+  Star,
+  Clock,
+  Calendar,
+  DollarSign
+} from 'lucide-react';
 
-// Import dummy data and mock API
-import { mockApiService } from '../data/dummyData';
-
-// Import hero image
-import heroImage from '../assets/skopjeArtBridge.jpg';
+// Import hero image - make sure to have this image in your assets folder
+import heroImage from '../assets/skopjeArtBridge.jpg'; // You may need to update this path
 
 const HomePage: React.FC = () => {
-  const [loadingState, setLoadingState] = useState<LoadingState>('loading');
-  const [places, setPlaces] = useState<Place[]>([]);
-  const [activeCategory, setActiveCategory] = useState<string>('');
+  const { places, loading, loadPlaces } = usePlaces();
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  useEffect(() => {
+    loadPlaces();
+  }, [loadPlaces]);
 
-  // Category icons
-  const AttractionsIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2" />
-      <line x1="12" y1="22" x2="12" y2="15.5" />
-      <polyline points="22 8.5 12 15.5 2 8.5" />
-      <line x1="12" y1="2" x2="12" y2="8.5" />
-    </svg>
-  );
-
-  const RestaurantsIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-      <line x1="6" y1="1" x2="6" y2="4" />
-      <line x1="10" y1="1" x2="10" y2="4" />
-      <line x1="14" y1="1" x2="14" y2="4" />
-    </svg>
-  );
-
-  const CafesIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
-      <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
-    </svg>
-  );
-
-  const ShoppingIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-      <line x1="3" y1="6" x2="21" y2="6" />
-      <path d="M16 10a4 4 0 0 1-8 0" />
-    </svg>
-  );
-
-  // Local tips icons
-  const TipIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="16" x2="12" y2="12" />
-      <line x1="12" y1="8" x2="12.01" y2="8" />
-    </svg>
-  );
-
-  const EventsIcon = () => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-      <line x1="16" y1="2" x2="16" y2="6" />
-      <line x1="8" y1="2" x2="8" y2="6" />
-      <line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-
-  // Define categories
-  const categories: Category[] = [
-    { id: PlaceType.HISTORICAL, name: 'Attractions', icon: <AttractionsIcon />, link: '/places?type=HISTORICAL' },
-    { id: PlaceType.RESTAURANT, name: 'Restaurants', icon: <RestaurantsIcon />, link: '/places?type=RESTAURANT' },
-    { id: PlaceType.CAFE_BAR, name: 'Cafés & Bars', icon: <CafesIcon />, link: '/places?type=CAFE_BAR' },
-    { id: PlaceType.MALL, name: 'Shopping', icon: <ShoppingIcon />, link: '/places?type=MALL' }
-  ];
-
-  // Define local tips
-  const localTips = [
-    {
-      id: 'tip1',
-      title: 'Best Time to Visit',
-      content: 'Spring (April-June) and fall (September-October) offer the most pleasant weather for exploring Skopje.',
-      icon: <TipIcon />,
-      link: '/tips/best-time'
+  // Categories for the discover section
+  const categories = [
+    { 
+      id: PlaceType.HISTORICAL, 
+      name: 'Historical', 
+      icon: <Landmark className="h-6 w-6" />, 
+      color: 'bg-orange-100 text-orange-600',
+      description: 'Explore ancient landmarks and historical sites'
     },
-    {
-      id: 'tip2',
-      title: 'Upcoming Events',
-      content: 'Don\'t miss the annual Skopje Summer Festival with music performances throughout the city center.',
-      icon: <EventsIcon />,
-      link: '/events'
+    { 
+      id: PlaceType.RESTAURANT, 
+      name: 'Restaurants', 
+      icon: <Utensils className="h-6 w-6" />, 
+      color: 'bg-blue-100 text-blue-600',
+      description: 'Discover local and international cuisine'
+    },
+    { 
+      id: PlaceType.CAFE_BAR, 
+      name: 'Cafés & Bars', 
+      icon: <Coffee className="h-6 w-6" />, 
+      color: 'bg-green-100 text-green-600',
+      description: 'Enjoy the vibrant café culture'
+    },
+    { 
+      id: PlaceType.PARKS, 
+      name: 'Parks', 
+      icon: <MapPin className="h-6 w-6" />, 
+      color: 'bg-emerald-100 text-emerald-600',
+      description: 'Relax in beautiful green spaces'
+    },
+    { 
+      id: PlaceType.MUSEUMS, 
+      name: 'Museums', 
+      icon: <Building className="h-6 w-6" />, 
+      color: 'bg-purple-100 text-purple-600',
+      description: 'Immerse yourself in art and culture'
     }
   ];
 
-  useEffect(() => {
-    const fetchPlaces = async () => {
-      try {
-        setLoadingState('loading');
-        // Use mock API service instead of real API
-        const data = await mockApiService.places.getAll();
-        setPlaces(data);
-        setLoadingState('succeeded');
-      } catch (error) {
-        console.error('Error fetching places:', error);
-        setLoadingState('failed');
-      }
-    };
+  // Features for the "why choose us" section
+  const features = [
+    {
+      icon: <Star className="h-8 w-8 text-yellow-500" />,
+      title: 'Curated Experiences',
+      description: 'Our local experts handpick the best places to ensure quality recommendations.'
+    },
+    {
+      icon: <Clock className="h-8 w-8 text-blue-500" />,
+      title: 'Save Time',
+      description: 'Efficiently plan your trip with personalized itineraries in minutes.'
+    },
+    {
+      icon: <Calendar className="h-8 w-8 text-green-500" />,
+      title: 'Flexible Planning',
+      description: 'Customize your tour based on your interests, budget, and schedule.'
+    },
+    {
+      icon: <DollarSign className="h-8 w-8 text-purple-500" />,
+      title: 'Affordable',
+      description: 'Create amazing experiences that fit your budget with local insights.'
+    }
+  ];
 
-    fetchPlaces();
-  }, []);
-
-  const handleCategoryChange = (categoryId: string) => {
-    setActiveCategory(prevCategory => 
-      prevCategory === categoryId ? '' : categoryId
-    );
+  // Handle search submit
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      window.location.href = `/places/search?q=${encodeURIComponent(searchQuery)}`;
+    }
   };
-
-  if (loadingState === 'loading') {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <HeroSection
-        backgroundImage={heroImage}
-        title="Discover Skopje"
-        subtitle="Explore the vibrant capital of Macedonia with its rich history, stunning architecture, and amazing food"
-        ctaText="Explore Now"
-        ctaLink="/places"
-      />
+      <section 
+        className="relative h-screen min-h-[600px] max-h-[800px] flex items-center justify-center text-white bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroImage})` }}
+      >
+        {/* Overlay */}
+        <div className="absolute inset-0 bg-black opacity-50"></div>
+        
+        {/* Content */}
+        <div className="relative z-10 container mx-auto px-4 text-center">
+          <h1 className="font-display font-bold text-4xl md:text-5xl lg:text-6xl mb-6 leading-tight">
+            Discover the Beauty of Skopje
+          </h1>
+          <p className="text-lg md:text-xl max-w-2xl mx-auto mb-8 leading-relaxed">
+            Explore the vibrant capital of North Macedonia with its rich history, stunning architecture, and amazing cuisine
+          </p>
+          
+          {/* Search Bar */}
+          <form 
+            onSubmit={handleSearchSubmit}
+            className="max-w-xl mx-auto bg-white/20 backdrop-blur-md p-2 rounded-full shadow-lg mb-8"
+          >
+            <div className="flex">
+              <div className="flex-grow">
+                <input
+                  type="text"
+                  placeholder="Search for places, attractions, restaurants..."
+                  className="w-full px-6 py-3 rounded-full border-none focus:ring-0 bg-transparent text-white placeholder-white/70"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <button
+                type="submit"
+                className="bg-primary-500 hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-full transition shadow-lg hover:shadow-xl"
+              >
+                <div className="flex items-center">
+                  <Search className="h-5 w-5 mr-2" />
+                  <span>Search</span>
+                </div>
+              </button>
+            </div>
+          </form>
+          
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link to="/places">
+              <Button 
+                variant="primary" 
+                size="lg"
+                className="rounded-full shadow-button hover:shadow-button-hover"
+              >
+                Explore Places
+              </Button>
+            </Link>
+            <Link to="/tours">
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="rounded-full bg-white/10 text-white border-white/30 hover:bg-white/20"
+              >
+                Create Tour
+              </Button>
+            </Link>
+          </div>
+        </div>
+        
+        {/* Scroll indicator */}
+        <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
+          <div className="w-10 h-10 flex items-center justify-center rounded-full bg-white/30 backdrop-blur-md">
+            <ChevronRight className="h-6 w-6 text-white transform rotate-90" />
+          </div>
+        </div>
+      </section>
 
-      {/* Category Navigation */}
-      <CategorySection
-        categories={categories}
-        title="Explore By Category"
-        subtitle="Find the best places in Skopje by category"
-        activeCategory={activeCategory}
-        onCategoryChange={handleCategoryChange}
-      />
+      {/* Discover Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-display font-bold text-3xl mb-4">Discover Skopje</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Explore the diverse attractions and experiences that Skopje has to offer
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {categories.map((category) => (
+              <Link 
+                key={category.id} 
+                to={`/places?type=${category.id}`}
+                className="group"
+              >
+                <div className="h-full bg-white rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300 overflow-hidden transform hover:-translate-y-1">
+                  <div className={`p-6 ${category.color} flex items-center justify-center`}>
+                    <div className="h-12 w-12 flex items-center justify-center">
+                      {category.icon}
+                    </div>
+                  </div>
+                  <div className="p-6">
+                    <h3 className="font-display font-semibold text-lg mb-2 group-hover:text-primary-600 transition">
+                      {category.name}
+                    </h3>
+                    <p className="text-gray-600 text-sm">
+                      {category.description}
+                    </p>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Featured Places */}
-      <FeaturedPlaces
-        title="Featured Places"
-        subtitle="Discover the most popular attractions and experiences in Skopje"
-        places={places}
-        activeCategory={activeCategory}
-      />
+      <section className="py-16">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-display font-bold text-3xl mb-4">Featured Places</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Discover the most popular attractions and experiences in Skopje
+            </p>
+          </div>
+          
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <LoadingSpinner size="lg" text="Loading featured places..." />
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+                {places.slice(0, 6).map((place) => (
+                  <PlaceCard key={place.id} place={place} />
+                ))}
+              </div>
+              
+              <div className="text-center">
+                <Link to="/places">
+                  <Button 
+                    variant="primary"
+                    rightIcon={<ChevronRight className="h-4 w-4" />}
+                  >
+                    View All Places
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </section>
 
-      {/* Local Tips Section */}
-      <LocalTips
-        tips={localTips}
-        title="Local Tips"
-        subtitle="Insights from locals to enhance your Skopje experience"
-      />
+      {/* Features Section */}
+      <section className="py-16 bg-primary-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="font-display font-bold text-3xl mb-4">Why Choose Tourly</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              We make your travel experience in Skopje smooth and memorable
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {features.map((feature, index) => (
+              <div 
+                key={index} 
+                className="bg-white p-6 rounded-xl shadow-card hover:shadow-card-hover transition-all duration-300"
+              >
+                <div className="rounded-full w-16 h-16 flex items-center justify-center bg-gray-100 mb-4">
+                  {feature.icon}
+                </div>
+                <h3 className="font-display font-semibold text-xl mb-3">{feature.title}</h3>
+                <p className="text-gray-600">{feature.description}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <Reviews/>
+      {/* CTA Section */}
+      <section className="py-16 bg-gray-900 text-white">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
+            <div className="lg:w-2/3">
+              <h2 className="font-display font-bold text-3xl mb-4">Ready to Explore Skopje?</h2>
+              <p className="text-gray-300 max-w-2xl">
+                Create your personalized tour and discover the best of Skopje according to your preferences and interests.
+              </p>
+            </div>
+            <div className="lg:w-1/3 flex justify-center lg:justify-end">
+              <Link to="/tours">
+                <Button 
+                  variant="primary" 
+                  size="lg"
+                  className="rounded-full shadow-lg hover:shadow-xl"
+                >
+                  Create Your Tour
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   );
 };

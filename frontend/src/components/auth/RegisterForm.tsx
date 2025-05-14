@@ -1,43 +1,34 @@
-import React, { useState, FormEvent } from 'react';
+// src/components/auth/RegisterForm.tsx
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AxiosError } from 'axios';
 import { useAuth } from '../../context/AuthContext';
 import { RegisterRequest } from '../../types/auth';
 import Input from '../common/Input';
-import Select from '../common/Select';
 import Button from '../common/Button';
-import Alert from '../common/Alert';
-
-interface RegisterFormData extends RegisterRequest {
-  confirmPassword: string;
-}
+import ErrorMessage from '../common/ErrorMessage';
 
 const RegisterForm: React.FC = () => {
-  const [formData, setFormData] = useState<RegisterFormData>({
+  const [formData, setFormData] = useState<RegisterRequest & { confirmPassword: string }>({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
     name: '',
     surname: '',
-    age: undefined,
-    gender: ''
+    gender: '',
   });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [serverError, setServerError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  const { register } = useAuth();
+  const [errors, setErrors] = useState<{ [key: string]: string }>({});
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  const { register, error: authError, clearError } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (name: string, value: string | number | undefined): void => {
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  // Handle form input changes
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void => {
+    const { name, value } = e.target;
     
-    // Clear error for this field if it exists
+    // Clear field-specific error when user starts typing
     if (errors[name]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -45,54 +36,77 @@ const RegisterForm: React.FC = () => {
         return newErrors;
       });
     }
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
     
-    // Required fields
-    if (!formData.username) newErrors.username = 'Username is required';
-    if (!formData.email) newErrors.email = 'Email is required';
-    if (!formData.password) newErrors.password = 'Password is required';
-    
-    // Password match
-    if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
+    // Clear auth error when user makes any change
+    if (authError) {
+      clearError();
     }
     
-    // Email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (formData.email && !emailRegex.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Validate form before submission
+  const validateForm = (): boolean => {
+    const newErrors: { [key: string]: string } = {};
+    
+    // Required fields
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
+    }
+    
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email is required';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email)) {
+        newErrors.email = 'Please enter a valid email address';
+      }
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    if (formData.password !== formData.confirmPassword) {
+      newErrors.confirmPassword = 'Passwords do not match';
     }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>): Promise<void> => {
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>): Promise<void> => {
     e.preventDefault();
     
-    if (!validateForm()) return;
-    
-    // Create a copy of form data without confirmPassword
-    const registerData: RegisterRequest = {
-      username: formData.username,
-      email: formData.email,
-      password: formData.password,
-      name: formData.name || undefined,
-      surname: formData.surname || undefined,
-      age: formData.age,
-      gender: formData.gender || undefined
-    };
+    if (!validateForm()) {
+      return;
+    }
     
     try {
-      setIsLoading(true);
-      setServerError(null);
-      await register(registerData);
-      setSuccess('Registration successful! You can now log in.');
+      setIsSubmitting(true);
       
-      // Clear form
+      // Create a copy without confirmPassword
+      const registerData: RegisterRequest = {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        name: formData.name || undefined,
+        surname: formData.surname || undefined,
+        gender: formData.gender || undefined,
+      };
+      
+      await register(registerData);
+      setSuccessMessage('Registration successful! Redirecting to login...');
+      
+      // Reset form
       setFormData({
         username: '',
         email: '',
@@ -100,137 +114,136 @@ const RegisterForm: React.FC = () => {
         confirmPassword: '',
         name: '',
         surname: '',
-        age: undefined,
-        gender: ''
+        gender: '',
       });
       
-      // Automatically redirect to login page after successful registration
+      // Navigate to login after a delay
       setTimeout(() => {
         navigate('/login');
       }, 2000);
     } catch (err) {
-      const axiosError = err as AxiosError<{ message: string }>;
-      setServerError(
-        axiosError.response?.data?.message || 
-        'Registration failed. Please try again.'
-      );
+      // Error is already set in auth context
+      console.error('Registration error:', err);
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {serverError && (
-        <Alert type="error" message={serverError} className="mb-4" />
+    <form onSubmit={handleSubmit} className="space-y-4">
+      {authError && (
+        <ErrorMessage message={authError} />
       )}
       
-      {success && (
-        <Alert type="success" message={success} className="mb-4" />
+      {successMessage && (
+        <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded">
+          {successMessage}
+        </div>
       )}
       
-      {/* Required Fields */}
-      <Input
-        label="Username *"
-        id="username"
-        name="username"
-        value={formData.username}
-        onChange={(e) => handleChange('username', e.target.value)}
-        disabled={isLoading}
-        error={errors.username}
-        required
-      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Required Fields */}
+        <div className="md:col-span-2">
+          <Input
+            label="Username"
+            name="username"
+            value={formData.username}
+            onChange={handleChange}
+            error={errors.username}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div className="md:col-span-2">
+          <Input
+            label="Email"
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            error={errors.email}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div>
+          <Input
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div>
+          <Input
+            label="Confirm Password"
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            error={errors.confirmPassword}
+            required
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        {/* Optional Fields */}
+        <div>
+          <Input
+            label="First Name"
+            name="name"
+            value={formData.name}
+            onChange={handleChange}
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div>
+          <Input
+            label="Last Name"
+            name="surname"
+            value={formData.surname}
+            onChange={handleChange}
+            disabled={isSubmitting}
+          />
+        </div>
+        
+        <div className="md:col-span-2">
+          <label htmlFor="gender" className="block font-medium mb-1 text-gray-700">
+            Gender
+          </label>
+          <select
+            id="gender"
+            name="gender"
+            value={formData.gender}
+            onChange={handleChange}
+            disabled={isSubmitting}
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="">Select Gender</option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+      </div>
       
-      <Input
-        label="Email *"
-        type="email"
-        id="email"
-        name="email"
-        value={formData.email}
-        onChange={(e) => handleChange('email', e.target.value)}
-        disabled={isLoading}
-        error={errors.email}
-        required
-      />
-      
-      <Input
-        label="Password *"
-        type="password"
-        id="password"
-        name="password"
-        value={formData.password}
-        onChange={(e) => handleChange('password', e.target.value)}
-        disabled={isLoading}
-        error={errors.password}
-        required
-      />
-      
-      <Input
-        label="Confirm Password *"
-        type="password"
-        id="confirmPassword"
-        name="confirmPassword"
-        value={formData.confirmPassword}
-        onChange={(e) => handleChange('confirmPassword', e.target.value)}
-        disabled={isLoading}
-        error={errors.confirmPassword}
-        required
-      />
-      
-      {/* Optional Fields */}
-      <Input
-        label="First Name"
-        id="name"
-        name="name"
-        value={formData.name}
-        onChange={(e) => handleChange('name', e.target.value)}
-        disabled={isLoading}
-      />
-      
-      <Input
-        label="Last Name"
-        id="surname"
-        name="surname"
-        value={formData.surname}
-        onChange={(e) => handleChange('surname', e.target.value)}
-        disabled={isLoading}
-      />
-      
-      <Input
-        label="Age"
-        type="number"
-        id="age"
-        name="age"
-        value={formData.age === undefined ? '' : formData.age}
-        onChange={(e) => handleChange('age', e.target.value ? parseInt(e.target.value) : undefined)}
-        disabled={isLoading}
-        min={1}
-        max={120}
-      />
-      
-      <Select
-        label="Gender"
-        id="gender"
-        name="gender"
-        value={formData.gender}
-        onChange={(value) => handleChange('gender', value)}
-        disabled={isLoading}
-        options={[
-          { value: '', label: 'Select Gender' },
-          { value: 'MALE', label: 'Male' },
-          { value: 'FEMALE', label: 'Female' },
-          { value: 'OTHER', label: 'Other' }
-        ]}
-      />
-      
-      <Button
-        type="submit"
-        variant="primary"
-        fullWidth
-        isLoading={isLoading}
-      >
-        Register
-      </Button>
+      <div className="pt-2">
+        <Button
+          type="submit"
+          fullWidth
+          isLoading={isSubmitting}
+        >
+          Register
+        </Button>
+      </div>
     </form>
   );
 };
