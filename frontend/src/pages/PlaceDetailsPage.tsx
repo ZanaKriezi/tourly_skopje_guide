@@ -1,41 +1,48 @@
 // src/pages/PlaceDetailsPage.tsx
-import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { usePlaces } from '../context/PlacesContext';
-import { PlaceType } from '../types/places';
-import Container from '../components/layout/Container';
-import Button from '../components/common/Button';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import ErrorMessage from '../components/common/ErrorMessage';
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { usePlaces } from "../context/PlacesContext";
+import { PlaceType } from "../types/places";
+import Container from "../components/layout/Container";
+import Button from "../components/common/Button";
+import LoadingSpinner from "../components/common/LoadingSpinner";
+import ErrorMessage from "../components/common/ErrorMessage";
+import ReviewsSection from "../components/reviews/ReviewsSection";
 
 // Helper to format the place type for display
 const formatPlaceType = (type: PlaceType): string => {
-  return type.replace(/_/g, ' ');
+  return type.replace(/_/g, " ");
 };
 
 // Star component for ratings
-const StarRating: React.FC<{ rating: number | null | undefined, size?: 'sm' | 'md' | 'lg' }> = ({ 
+const StarRating: React.FC<{
+  rating: number | null | undefined;
+  size?: "sm" | "md" | "lg";
+}> = ({
   rating = 0, // Provide default value when null/undefined
-  size = 'md' 
+  size = "md",
 }) => {
   // Use 0 if rating is null or undefined
   const actualRating = rating ?? 0;
-  
+
   // Calculate full stars, half stars, and empty stars
   const fullStars = Math.floor(actualRating);
   const hasHalfStar = actualRating % 1 >= 0.5;
   const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-  
+
   // Determine star size
   const getStarSize = (): number => {
     switch (size) {
-      case 'sm': return 16;
-      case 'lg': return 24;
-      default: return 20;
+      case "sm":
+        return 16;
+      case "lg":
+        return 24;
+      default:
+        return 20;
     }
   };
   const starSize = getStarSize();
-  
+
   return (
     <div className="flex items-center">
       {[...Array(fullStars)].map((_, i) => (
@@ -45,7 +52,11 @@ const StarRating: React.FC<{ rating: number | null | undefined, size?: 'sm' | 'm
       {[...Array(emptyStars)].map((_, i) => (
         <Star key={`empty-${i}`} type="empty" size={starSize} />
       ))}
-      <span className={`ml-2 ${size === 'lg' ? 'text-lg' : 'text-sm'} text-gray-600`}>
+      <span
+        className={`ml-2 ${
+          size === "lg" ? "text-lg" : "text-sm"
+        } text-gray-600`}
+      >
         ({actualRating.toFixed(1)})
       </span>
     </div>
@@ -54,17 +65,24 @@ const StarRating: React.FC<{ rating: number | null | undefined, size?: 'sm' | 'm
 
 // Star icon
 interface StarProps {
-  type: 'full' | 'half' | 'empty';
+  type: "full" | "half" | "empty";
   size: number;
 }
 
 const Star: React.FC<StarProps> = ({ type, size }) => {
-  const fillColor = type === 'empty' ? 'none' : '#FFD700'; // Gold color
-  const strokeColor = '#FFD700';
-  
+  const fillColor = type === "empty" ? "none" : "#FFD700"; // Gold color
+  const strokeColor = "#FFD700";
+
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fillColor} stroke={strokeColor} strokeWidth="2">
-      {type === 'half' ? (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill={fillColor}
+      stroke={strokeColor}
+      strokeWidth="2"
+    >
+      {type === "half" ? (
         <path d="M12 17.8 5.8 21 7 14.1 2 9.3l7-1L12 2" fill={fillColor} />
       ) : (
         <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
@@ -89,27 +107,29 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
   const formatDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
       });
     } catch (error) {
-      console.log('Error parsing date:', error);
-      return 'Unknown date';
+      console.log("Error parsing date:", error);
+      return "Unknown date";
     }
   };
 
   return (
     <div className="bg-gray-50 p-4 rounded-lg mb-4">
       <div className="flex justify-between mb-2">
-        <div className="font-medium">{review.userName || 'Anonymous User'}</div>
-        <div className="text-gray-500 text-sm">{formatDate(review.timestamp)}</div>
+        <div className="font-medium">{review.userName || "Anonymous User"}</div>
+        <div className="text-gray-500 text-sm">
+          {formatDate(review.timestamp)}
+        </div>
       </div>
       <div className="mb-2">
         <StarRating rating={review.rating} size="sm" />
       </div>
-      <p className="text-gray-700">{review.comment || 'No comment provided'}</p>
+      <p className="text-gray-700">{review.comment || "No comment provided"}</p>
     </div>
   );
 };
@@ -117,12 +137,21 @@ const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
 const PlaceDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { selectedPlace, loading, error, loadPlaceDetails, clearError, loadPlaceReviews, reviews, reviewsPagination } = usePlaces();
+  const {
+    selectedPlace,
+    loading,
+    error,
+    loadPlaceDetails,
+    clearError,
+    loadPlaceReviews,
+    reviews,
+    reviewsPagination,
+  } = usePlaces();
   const [showAllReviews, setShowAllReviews] = React.useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
-      loadPlaceDetails(Number(id)).catch(error => {
+      loadPlaceDetails(Number(id)).catch((error) => {
         // Log the error but don't crash the component
         console.error("Error loading place details:", error);
       });
@@ -149,9 +178,11 @@ const PlaceDetailsPage: React.FC = () => {
   // Generate image URL from photo reference
   const getImageUrl = (): string => {
     if (selectedPlace?.photoReference) {
-      return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${selectedPlace.photoReference}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+      return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=800&photoreference=${
+        selectedPlace.photoReference
+      }&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
     }
-    return 'https://via.placeholder.com/800x400?text=No+Image+Available';
+    return "https://via.placeholder.com/800x400?text=No+Image+Available";
   };
 
   // Render reviews section with error handling
@@ -162,7 +193,8 @@ const PlaceDetailsPage: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">Reviews</h2>
           <div className="bg-red-50 p-4 rounded-lg border border-red-200">
             <p className="text-red-700">
-              Sorry, we couldn't load reviews at this time. Please try again later.
+              Sorry, we couldn't load reviews at this time. Please try again
+              later.
             </p>
           </div>
         </div>
@@ -173,7 +205,9 @@ const PlaceDetailsPage: React.FC = () => {
       // Show all reviews that were loaded
       return (
         <div>
-          <h2 className="text-xl font-semibold mb-4">All Reviews ({reviewsPagination.totalElements})</h2>
+          <h2 className="text-xl font-semibold mb-4">
+            All Reviews ({reviewsPagination.totalElements})
+          </h2>
           <div className="space-y-4">
             {reviews.map((review) => (
               <ReviewCard key={review.id} review={review} />
@@ -191,11 +225,16 @@ const PlaceDetailsPage: React.FC = () => {
     }
 
     // Show preview reviews from the place details
-    if (!selectedPlace?.recentReviews || selectedPlace.recentReviews.length === 0) {
+    if (
+      !selectedPlace?.recentReviews ||
+      selectedPlace.recentReviews.length === 0
+    ) {
       return (
         <div>
           <h2 className="text-xl font-semibold mb-4">Reviews</h2>
-          <p className="text-gray-500 italic">No reviews yet. Be the first to review!</p>
+          <p className="text-gray-500 italic">
+            No reviews yet. Be the first to review!
+          </p>
         </div>
       );
     }
@@ -207,13 +246,10 @@ const PlaceDetailsPage: React.FC = () => {
           {selectedPlace.recentReviews.map((review) => (
             <ReviewCard key={review.id} review={review} />
           ))}
-          
+
           {selectedPlace.reviewCount > selectedPlace.recentReviews.length && (
             <div className="text-center mt-4">
-              <Button 
-                variant="outline"
-                onClick={handleViewAllReviews}
-              >
+              <Button variant="outline" onClick={handleViewAllReviews}>
                 See all {selectedPlace.reviewCount} reviews
               </Button>
             </div>
@@ -234,18 +270,14 @@ const PlaceDetailsPage: React.FC = () => {
   if (error && !showAllReviews) {
     return (
       <Container>
-        <ErrorMessage 
-          message={error} 
+        <ErrorMessage
+          message={error}
           onRetry={() => {
             clearError();
             if (id) loadPlaceDetails(Number(id));
-          }} 
+          }}
         />
-        <Button
-          variant="outline"
-          className="mt-4"
-          onClick={handleBack}
-        >
+        <Button variant="outline" className="mt-4" onClick={handleBack}>
           ← Back
         </Button>
       </Container>
@@ -257,11 +289,10 @@ const PlaceDetailsPage: React.FC = () => {
       <Container>
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-4">Place not found</h2>
-          <p className="text-gray-600 mb-6">The place you're looking for doesn't exist or has been removed.</p>
-          <Button
-            variant="outline"
-            onClick={handleBack}
-          >
+          <p className="text-gray-600 mb-6">
+            The place you're looking for doesn't exist or has been removed.
+          </p>
+          <Button variant="outline" onClick={handleBack}>
             ← Back to Places
           </Button>
         </div>
@@ -312,26 +343,26 @@ const PlaceDetailsPage: React.FC = () => {
           <div>
             <StarRating rating={selectedPlace.averageRating ?? 0} size="lg" />
             <p className="text-gray-600 mt-1">
-              Based on {selectedPlace.reviewCount ?? 0} {selectedPlace.reviewCount === 1 ? 'review' : 'reviews'}
+              Based on {selectedPlace.reviewCount ?? 0}{" "}
+              {selectedPlace.reviewCount === 1 ? "review" : "reviews"}
             </p>
           </div>
-
           {/* Description */}
           <div>
             <h2 className="text-xl font-semibold mb-2">About</h2>
             <p className="text-gray-700">
-              {selectedPlace.description || 'No description available. This attraction is coming soon.'}
+              {selectedPlace.description ||
+                "No description available. This attraction is coming soon."}
             </p>
           </div>
-
           {/* Reviews */}
-          {renderReviewsSection()}
+          <div>{id && <ReviewsSection placeId={Number(id)} />}</div>{" "}
         </div>
 
         {/* Right Column: Contact Info */}
         <div className="bg-gray-50 p-6 rounded-lg shadow-sm h-fit">
           <h2 className="text-xl font-semibold mb-4">Information</h2>
-          
+
           {/* Address */}
           {selectedPlace.address && (
             <div className="mb-4">
@@ -339,27 +370,30 @@ const PlaceDetailsPage: React.FC = () => {
               <p className="text-gray-600">{selectedPlace.address}</p>
             </div>
           )}
-          
+
           {/* Phone */}
           {selectedPlace.phoneNumber && (
             <div className="mb-4">
               <h3 className="font-medium text-gray-700 mb-1">Phone</h3>
               <p className="text-gray-600">
-                <a href={`tel:${selectedPlace.phoneNumber}`} className="hover:text-primary">
+                <a
+                  href={`tel:${selectedPlace.phoneNumber}`}
+                  className="hover:text-primary"
+                >
                   {selectedPlace.phoneNumber}
                 </a>
               </p>
             </div>
           )}
-          
+
           {/* Website */}
           {selectedPlace.websiteURL && (
             <div className="mb-4">
               <h3 className="font-medium text-gray-700 mb-1">Website</h3>
               <p className="text-gray-600">
-                <a 
-                  href={selectedPlace.websiteURL} 
-                  target="_blank" 
+                <a
+                  href={selectedPlace.websiteURL}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
@@ -368,40 +402,43 @@ const PlaceDetailsPage: React.FC = () => {
               </p>
             </div>
           )}
-          
+
           {/* Social Media */}
           {selectedPlace.socialMedia && (
             <div>
               <h3 className="font-medium text-gray-700 mb-1">Social Media</h3>
               <p className="text-gray-600">
-                <a 
-                  href={selectedPlace.socialMedia} 
-                  target="_blank" 
+                <a
+                  href={selectedPlace.socialMedia}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="text-primary hover:underline"
                 >
-                  {selectedPlace.socialMedia.includes('facebook') ? 'Facebook' : 
-                   selectedPlace.socialMedia.includes('instagram') ? 'Instagram' : 
-                   'Social Media'}
+                  {selectedPlace.socialMedia.includes("facebook")
+                    ? "Facebook"
+                    : selectedPlace.socialMedia.includes("instagram")
+                    ? "Instagram"
+                    : "Social Media"}
                 </a>
               </p>
             </div>
           )}
-          
+
           {/* If none of the above are available, show a message */}
-          {!selectedPlace.address && !selectedPlace.phoneNumber && 
-           !selectedPlace.websiteURL && !selectedPlace.socialMedia && (
-            <p className="text-gray-500 italic">Additional information coming soon.</p>
-          )}
+          {!selectedPlace.address &&
+            !selectedPlace.phoneNumber &&
+            !selectedPlace.websiteURL &&
+            !selectedPlace.socialMedia && (
+              <p className="text-gray-500 italic">
+                Additional information coming soon.
+              </p>
+            )}
         </div>
       </div>
 
       {/* Back button */}
       <div className="mb-8">
-        <Button
-          variant="outline"
-          onClick={handleBack}
-        >
+        <Button variant="outline" onClick={handleBack}>
           ← Back to Places
         </Button>
       </div>

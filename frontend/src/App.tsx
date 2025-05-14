@@ -4,6 +4,7 @@ import { BrowserRouter as Router } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { PlacesProvider } from './context/PlacesContext';
 import { ToursProvider } from './context/ToursContext';
+import { ReviewsProvider } from './context/ReviewsContext';
 import AppRoutes from './routes';
 import './App.css';
 
@@ -13,7 +14,9 @@ const App: React.FC = () => {
       <AuthProvider>
         <PlacesProvider>
           <ToursProvider>
-            <AppRoutes />
+            <ReviewsProvider>
+              <AppRoutes />
+            </ReviewsProvider>
           </ToursProvider>
         </PlacesProvider>
       </AuthProvider>

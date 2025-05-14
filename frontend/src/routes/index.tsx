@@ -11,6 +11,7 @@ import ToursPage from '../pages/ToursPage';
 import TourDetailsPage from '../pages/TourDetailsPage';
 import TourEditPage from '../pages/TourEditPage';
 import ProfilePage from '../pages/ProfilePage';
+import UserReviewsPage from '../pages/UserReviewsPage';
 import ProtectedRoute from './ProtectedRoute';
 import PageLayout from '../components/layout/PageLayout';
 
@@ -31,6 +32,7 @@ const AppRoutes: React.FC = () => {
       <Route element={<ProtectedRoute />}>
         <Route path="/profile" element={<PageLayout><ProfilePage /></PageLayout>} />
         <Route path="/tours/:id/edit" element={<PageLayout><TourEditPage /></PageLayout>} />
+        <Route path="/my-reviews" element={<PageLayout><UserReviewsPage /></PageLayout>} />
         {/* Add other protected routes here */}
       </Route>
       

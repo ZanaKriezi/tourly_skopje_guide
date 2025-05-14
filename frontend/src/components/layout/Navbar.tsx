@@ -73,6 +73,12 @@ const Navbar: React.FC = () => {
                       >
                         Profile
                       </Link>
+                      <Link
+                        to="/my-reviews"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        My Reviews
+                      </Link>
                       {/* Add other account-related links here */}
                       <button
                         onClick={handleLogout}
@@ -154,6 +160,13 @@ const Navbar: React.FC = () => {
               >
                 Tours
               </MobileNavLink>
+              <MobileNavLink
+                to="/my-reviews"
+                active={isActive("/my-reviews")}
+                onClick={closeMenu}
+              >
+                My Reviews
+              </MobileNavLink>
             </div>
 
             {/* Mobile Authentication */}
@@ -172,6 +185,7 @@ const Navbar: React.FC = () => {
                       Profile
                     </Button>
                   </Link>
+
                   <Button
                     variant="outline"
                     fullWidth
