@@ -51,43 +51,80 @@ public class PlaceAIService {
         logger.info("Starting to process all places for AI enhancements");
 
         List<Place> places = placeRepository.findAll();
+        logger.info("Found {} total places to consider for processing", places.size());
         int processed = 0;
+        int considered = 0;
 
         for (Place place : places) {
-            if (shouldProcessPlace(place)) {
+            if (place.getName() == null || place.getName().isBlank()) {
+                logger.debug("Skipping place with ID {} - missing name", place.getId());
+                continue;
+            }
+
+            logger.debug("Evaluating place: {} (ID: {})", place.getName(), place.getId());
+            boolean needsProcessing = false;
+
+            // Check if description is needed
+            boolean needsDescription = place.getDescription() == null || place.getDescription().isBlank();
+            if (needsDescription) {
+                logger.debug("Place {} needs description", place.getName());
+                needsProcessing = true;
+            }
+
+            // Check if sentiment tag is needed
+            boolean needsSentiment = place.getSentimentTag() == null && !isExcludedForSentimentAnalysis(place);
+            if (needsSentiment) {
+                logger.debug("Place {} needs sentiment tag", place.getName());
+                needsProcessing = true;
+            }
+
+            if (needsProcessing) {
+                considered++;
                 try {
                     boolean updated = false;
 
                     // Generate description if missing
-                    if (place.getDescription() == null || place.getDescription().isBlank()) {
+                    if (needsDescription) {
                         String description = generatePlaceDescription(place);
                         if (description != null && !description.isBlank()) {
                             place.setDescription(description);
                             updated = true;
+                            logger.info("Generated description for place: {}", place.getName());
+                        } else {
+                            logger.warn("Failed to generate description for place: {}", place.getName());
                         }
                     }
 
                     // Generate sentiment tag if needed
-                    if (!isExcludedForSentimentAnalysis(place) && place.getSentimentTag() == null) {
+                    if (needsSentiment) {
                         String sentimentTag = generateSentimentTag(place);
                         if (sentimentTag != null && !sentimentTag.isBlank()) {
                             place.setSentimentTag(sentimentTag);
                             updated = true;
+                            logger.info("Generated sentiment tag for place: {}: {}", place.getName(), sentimentTag);
+                        } else {
+                            logger.warn("Failed to generate sentiment tag for place: {}", place.getName());
                         }
                     }
 
                     if (updated) {
-                        placeRepository.save(place);
-                        processed++;
-                        logger.info("Updated place: {}", place.getName());
+                        Place savedPlace = placeRepository.save(place);
+                        if (savedPlace != null) {
+                            processed++;
+                            logger.info("Successfully updated place in database: {}", place.getName());
+                        } else {
+                            logger.error("Failed to save place to database: {}", place.getName());
+                        }
                     }
                 } catch (Exception e) {
-                    logger.error("Error processing place {}: {}", place.getName(), e.getMessage());
+                    logger.error("Error processing place {}: {}", place.getName(), e.getMessage(), e);
                 }
+            } else {
+                logger.debug("Place {} doesn't need processing", place.getName());
             }
         }
 
-        logger.info("Completed processing places. Updated {} places.", processed);
+        logger.info("Completed processing places. Considered {} places. Updated {} places.", considered, processed);
     }
 
     /**
@@ -95,52 +132,109 @@ public class PlaceAIService {
      */
     @Transactional
     public Place processPlace(Long placeId) {
+        logger.info("Processing place with ID: {}", placeId);
+
         Place place = placeRepository.findById(placeId)
                 .orElseThrow(() -> new RuntimeException("Place not found with ID: " + placeId));
 
-        if (shouldProcessPlace(place)) {
-            // Generate description if missing
-            if (place.getDescription() == null || place.getDescription().isBlank()) {
-                String description = generatePlaceDescription(place);
-                if (description != null && !description.isBlank()) {
-                    place.setDescription(description);
-                }
-            }
+        logger.info("Found place: {} (ID: {})", place.getName(), place.getId());
+        logger.info("Current description: {}", place.getDescription());
+        logger.info("Current sentiment tag: {}", place.getSentimentTag());
 
-            // Generate sentiment tag if needed
-            if (!isExcludedForSentimentAnalysis(place) && place.getSentimentTag() == null) {
-                String sentimentTag = generateSentimentTag(place);
-                if (sentimentTag != null && !sentimentTag.isBlank()) {
-                    place.setSentimentTag(sentimentTag);
-                }
-            }
+        boolean updated = false;
 
+        // Generate description if missing
+        if (place.getDescription() == null || place.getDescription().isBlank()) {
+            logger.info("Generating description for place: {}", place.getName());
+            String description = generatePlaceDescription(place);
+            if (description != null && !description.isBlank()) {
+                place.setDescription(description);
+                updated = true;
+                logger.info("Generated description: {}", description);
+            } else {
+                logger.warn("Failed to generate description");
+            }
+        }
+
+        // Generate sentiment tag if needed
+        if (!isExcludedForSentimentAnalysis(place) && place.getSentimentTag() == null) {
+            logger.info("Generating sentiment tag for place: {}", place.getName());
+            String sentimentTag = generateSentimentTag(place);
+            if (sentimentTag != null && !sentimentTag.isBlank()) {
+                place.setSentimentTag(sentimentTag);
+                updated = true;
+                logger.info("Generated sentiment tag: {}", sentimentTag);
+            } else {
+                logger.warn("Failed to generate sentiment tag");
+            }
+        } else {
+            logger.info("Place {} is excluded from sentiment analysis or already has a sentiment tag", place.getName());
+        }
+
+        if (updated) {
+            logger.info("Saving updated place: {}", place.getName());
             return placeRepository.save(place);
+        } else {
+            logger.info("No updates needed for place: {}", place.getName());
         }
 
         return place;
     }
 
     /**
-     * Determine if a place should be processed for AI enhancements
+     * Test method to diagnose AI service issues
      */
-    private boolean shouldProcessPlace(Place place) {
-        // Don't process place if it's missing essential information
-        if (place.getName() == null || place.getName().isBlank()) {
-            return false;
+    @Transactional
+    public void testAIService(Long placeId) {
+        logger.info("Testing AI service with place ID: {}", placeId);
+
+        Place place = placeRepository.findById(placeId)
+                .orElseThrow(() -> new RuntimeException("Place not found with ID: " + placeId));
+
+        logger.info("Test place: {} ({})", place.getName(), place.getId());
+        logger.info("Current description: {}", place.getDescription());
+        logger.info("Current sentiment tag: {}", place.getSentimentTag());
+        logger.info("Place type: {}", place.getPlaceType());
+        logger.info("Average rating: {}", place.getAverageRating());
+        logger.info("Has reviews: {}", place.getReviews() != null && !place.getReviews().isEmpty());
+
+        // Test OpenAI connection with a simple prompt
+        String testPrompt = "Say hello to Skopje!";
+        try {
+            String testResponse = getCompletionFromOpenAI(testPrompt);
+            logger.info("OpenAI test response: {}", testResponse);
+        } catch (Exception e) {
+            logger.error("OpenAI test failed: {}", e.getMessage(), e);
         }
 
-        // Always generate description for any place
-        if (place.getDescription() == null || place.getDescription().isBlank()) {
-            return true;
+        // Test description generation
+        try {
+            String description = generatePlaceDescription(place);
+            logger.info("Generated test description: {}", description);
+        } catch (Exception e) {
+            logger.error("Description generation test failed: {}", e.getMessage(), e);
         }
 
-        // For sentiment tag, check if it qualifies
-        if (place.getSentimentTag() == null) {
-            return !isExcludedForSentimentAnalysis(place);
+        // Test sentiment tag generation if applicable
+        if (!isExcludedForSentimentAnalysis(place)) {
+            try {
+                String sentimentTag = generateSentimentTag(place);
+                logger.info("Generated test sentiment tag: {}", sentimentTag);
+            } catch (Exception e) {
+                logger.error("Sentiment tag generation test failed: {}", e.getMessage(), e);
+            }
+        } else {
+            logger.info("Place is excluded from sentiment analysis");
+            if (excludedPlaceTypes.contains(place.getPlaceType())) {
+                logger.info("Reason: Place type {} is in excluded types", place.getPlaceType());
+            }
+            if (place.getAverageRating() == null || place.getAverageRating() < 3.0f) {
+                logger.info("Reason: Average rating {} is below threshold", place.getAverageRating());
+            }
+            if (place.getReviews() == null || place.getReviews().isEmpty()) {
+                logger.info("Reason: No reviews available");
+            }
         }
-
-        return false;
     }
 
     /**
@@ -149,16 +243,19 @@ public class PlaceAIService {
     private boolean isExcludedForSentimentAnalysis(Place place) {
         // Check if place type is excluded
         if (excludedPlaceTypes.contains(place.getPlaceType())) {
+            logger.debug("Place {} is excluded due to type: {}", place.getName(), place.getPlaceType());
             return true;
         }
 
         // Check for low ratings or no ratings
         if (place.getAverageRating() == null || place.getAverageRating() < 3.0f) {
+            logger.debug("Place {} is excluded due to low rating: {}", place.getName(), place.getAverageRating());
             return true;
         }
 
         // Check if there are no reviews
         if (place.getReviews() == null || place.getReviews().isEmpty()) {
+            logger.debug("Place {} is excluded due to no reviews", place.getName());
             return true;
         }
 
@@ -170,6 +267,7 @@ public class PlaceAIService {
      */
     private String generateSentimentTag(Place place) {
         if (place.getReviews() == null || place.getReviews().isEmpty()) {
+            logger.debug("No reviews available for sentiment analysis of place: {}", place.getName());
             return null;
         }
 
@@ -180,12 +278,15 @@ public class PlaceAIService {
                 .collect(Collectors.toList());
 
         if (reviewTexts.isEmpty()) {
+            logger.debug("No review texts available for sentiment analysis of place: {}", place.getName());
             return null;
         }
 
+        logger.debug("Found {} reviews with text for place: {}", reviewTexts.size(), place.getName());
+
         // Prepare the prompt for OpenAI
         String prompt = String.format(
-                "Based on the following reviews for \"%s\" in Skopje, North Macedonia, assign ONE sentiment tag from this list: " +
+                "Based on the following reviews for \"%s\" in Skopje, North Macedonia, assign ONE sentiment tag from this list, or generate a more appropriate one: " +
                         "UNIQUE, AUTHENTIC, TRENDY, POPULAR, PEACEFUL, FAMILY_FRIENDLY, ROMANTIC, HISTORICAL. " +
                         "Choose the tag that best represents the overall sentiment. " +
                         "Reply with ONLY the sentiment tag, nothing else.\n\nReviews:\n%s",
@@ -194,7 +295,9 @@ public class PlaceAIService {
         );
 
         try {
+            logger.debug("Sending prompt to OpenAI for sentiment analysis of place: {}", place.getName());
             String response = getCompletionFromOpenAI(prompt);
+            logger.debug("Received response from OpenAI: {}", response);
 
             // Clean up the response
             if (response != null && !response.isBlank()) {
@@ -206,13 +309,14 @@ public class PlaceAIService {
                         .collect(Collectors.toSet());
 
                 if (validTags.contains(response)) {
+                    logger.debug("Valid sentiment tag generated for place {}: {}", place.getName(), response);
                     return response;
                 } else {
                     logger.warn("AI returned invalid sentiment tag: {} for place: {}", response, place.getName());
                 }
             }
         } catch (Exception e) {
-            logger.error("Error generating sentiment tag for {}: {}", place.getName(), e.getMessage());
+            logger.error("Error generating sentiment tag for {}: {}", place.getName(), e.getMessage(), e);
         }
 
         return null;
@@ -235,12 +339,14 @@ public class PlaceAIService {
                 place.getAverageRating() != null ? place.getAverageRating() : "N/A"
         );
 
-        System.out.printf ( "Generating description for PLACE: %s%n", place.getName ());
+        logger.debug("Sending prompt to OpenAI for description generation for place: {}", place.getName());
 
         try {
-            return getCompletionFromOpenAI(prompt);
+            String response = getCompletionFromOpenAI(prompt);
+            logger.debug("Received description from OpenAI: {}", response);
+            return response;
         } catch (Exception e) {
-            logger.error("Error generating description for {}: {}", place.getName(), e.getMessage());
+            logger.error("Error generating description for {}: {}", place.getName(), e.getMessage(), e);
             return null;
         }
     }
@@ -257,12 +363,22 @@ public class PlaceAIService {
         options.setMaxTokens(500);
         options.setTemperature(0.7);
 
-        ChatCompletions completions = openAIClient.getChatCompletions(deploymentName, options);
+        try {
+            logger.debug("Sending request to OpenAI API");
+            ChatCompletions completions = openAIClient.getChatCompletions(deploymentName, options);
+            logger.debug("Received response from OpenAI API");
 
-        if (!completions.getChoices().isEmpty()) {
-            return completions.getChoices().get(0).getMessage().getContent();
+            if (completions != null && !completions.getChoices().isEmpty()) {
+                String content = completions.getChoices().get(0).getMessage().getContent();
+                logger.debug("OpenAI content response: {}", content);
+                return content;
+            } else {
+                logger.warn("Empty or null response from OpenAI");
+                return null;
+            }
+        } catch (Exception e) {
+            logger.error("Error communicating with OpenAI: {}", e.getMessage(), e);
+            throw e; // Re-throw to allow caller to handle or log the specific error
         }
-
-        return null;
     }
 }
