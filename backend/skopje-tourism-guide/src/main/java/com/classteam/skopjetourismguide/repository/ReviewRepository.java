@@ -13,6 +13,7 @@ import java.util.List;
 
 @Repository
 public interface ReviewRepository extends JpaRepository<Review, Long> {
+    List<Review> findByPlaceIdOrderByTimestampDesc(Long placeId, Pageable pageable);
     List<Review> findByUser(User user);
     List<Review> findByPlace(Place place);
     List<Review> findByRatingGreaterThanEqual(Integer rating);

@@ -10,6 +10,7 @@ import com.classteam.skopjetourismguide.repository.PlaceRepository;
 import com.classteam.skopjetourismguide.repository.ReviewRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -262,8 +263,9 @@ public class PlacesService {
         if (placeOpt.isPresent()) {
             Place place = placeOpt.get();
 
-            // Fetch limited reviews separately using native query
-            List<Review> recentReviews = placeRepository.findTopNReviewsByPlaceId(id, reviewLimit);
+            // Use the JPA repository method instead of the native query
+            List<Review> recentReviews = reviewRepository.findByPlaceIdOrderByTimestampDesc(
+                    id, PageRequest.of(0, reviewLimit));
 
             // Get review count
             int reviewCount = placeRepository.countReviewsByPlaceId(id);
