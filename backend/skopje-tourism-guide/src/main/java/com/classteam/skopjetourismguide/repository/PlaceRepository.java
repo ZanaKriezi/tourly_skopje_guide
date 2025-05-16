@@ -27,14 +27,14 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
     List<Place> findByPlaceTypeOrderByAverageRatingDesc(PlaceType placeType);
     List<Place> findTop10ByPlaceTypeOrderByAverageRatingDesc(PlaceType placeType);
 
-    // Paginated versions - FIXED by using @Query instead of EntityGraph
-    @Query("SELECT p FROM Place p")
+    // Updated paginated queries with default sorting by rating
+    @Query("SELECT p FROM Place p ORDER BY p.averageRating DESC")
     Page<Place> findAll(Pageable pageable);
 
-    @Query("SELECT p FROM Place p WHERE p.placeType = :placeType")
+    @Query("SELECT p FROM Place p WHERE p.placeType = :placeType ORDER BY p.averageRating DESC")
     Page<Place> findByPlaceType(@Param("placeType") PlaceType placeType, Pageable pageable);
 
-    @Query("SELECT p FROM Place p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query("SELECT p FROM Place p WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :name, '%')) ORDER BY p.averageRating DESC")
     Page<Place> findByNameContainingIgnoreCase(@Param("name") String name, Pageable pageable);
 
     // Place with ID query

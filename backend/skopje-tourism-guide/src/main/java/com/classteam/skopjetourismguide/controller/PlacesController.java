@@ -128,14 +128,14 @@ public class PlacesController {
         }
     }
 
-    // NEW OPTIMIZED ENDPOINTS WITH PAGINATION AND DTOS
+    // NEW OPTIMIZED ENDPOINTS WITH PAGINATION AND DTOS - UPDATED WITH RATING SORTING
 
     @GetMapping
     public ResponseEntity<PageResponseDTO<PlaceDTO>> getAllPlaces(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "averageRating") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
         Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
@@ -159,8 +159,8 @@ public class PlacesController {
             @PathVariable String placeType,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "averageRating") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
         try {
             PlaceType type = PlaceType.valueOf(placeType.toUpperCase());
@@ -179,8 +179,8 @@ public class PlacesController {
             @RequestParam(required = false) String name,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
-            @RequestParam(defaultValue = "id") String sortBy,
-            @RequestParam(defaultValue = "asc") String sortDir) {
+            @RequestParam(defaultValue = "averageRating") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
 
         Sort.Direction direction = sortDir.equalsIgnoreCase("desc") ? Sort.Direction.DESC : Sort.Direction.ASC;
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
