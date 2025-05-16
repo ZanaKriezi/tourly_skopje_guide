@@ -12,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -239,12 +240,21 @@ public class PlacesService {
     }
 
     //
-    // NEW PAGINATED METHODS WITH DTO SUPPORT
+    // NEW PAGINATED METHODS WITH DTO SUPPORT - UPDATED FOR RATING SORTING
     //
 
-    // Get all places with pagination
+    // Get all places with pagination - ensure default sorting by rating
     @Transactional(readOnly = true)
     public PageResponseDTO<PlaceDTO> getAllPlacesPaginated(Pageable pageable) {
+        // Ensure default sorting if not provided
+        if (pageable.getSort().isEmpty()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Direction.DESC, "averageRating")
+            );
+        }
+
         Page<Place> placesPage = placeRepository.findAll(pageable);
 
         List<PlaceDTO> placeDTOs = placesPage.getContent().stream()
@@ -280,9 +290,18 @@ public class PlacesService {
         return Optional.empty();
     }
 
-    // Get places by type with pagination
+    // Get places by type with pagination - ensure default sorting by rating
     @Transactional(readOnly = true)
     public PageResponseDTO<PlaceDTO> getPlacesByTypePaginated(PlaceType placeType, Pageable pageable) {
+        // Ensure default sorting if not provided
+        if (pageable.getSort().isEmpty()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Direction.DESC, "averageRating")
+            );
+        }
+
         Page<Place> placesPage = placeRepository.findByPlaceType(placeType, pageable);
 
         List<PlaceDTO> placeDTOs = placesPage.getContent().stream()
@@ -292,9 +311,18 @@ public class PlacesService {
         return dtoMapper.toPageResponse(placesPage, placeDTOs);
     }
 
-    // Search places by name with pagination
+    // Search places by name with pagination - ensure default sorting by rating
     @Transactional(readOnly = true)
     public PageResponseDTO<PlaceDTO> searchPlacesByNamePaginated(String name, Pageable pageable) {
+        // Ensure default sorting if not provided
+        if (pageable.getSort().isEmpty()) {
+            pageable = PageRequest.of(
+                    pageable.getPageNumber(),
+                    pageable.getPageSize(),
+                    Sort.by(Sort.Direction.DESC, "averageRating")
+            );
+        }
+
         Page<Place> placesPage = placeRepository.findByNameContainingIgnoreCase(name, pageable);
 
         List<PlaceDTO> placeDTOs = placesPage.getContent().stream()

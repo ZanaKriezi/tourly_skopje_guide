@@ -16,7 +16,8 @@ import java.util.List;
 
 @Entity
 @Table(name = "places_skopje")
-@Getter @Setter
+@Getter
+@Setter
 @ToString(exclude = {"reviews", "tours"}) // Prevent toString() recursion
 @JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Place {
