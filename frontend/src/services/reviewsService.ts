@@ -3,8 +3,10 @@ import { get, post, put, del } from './apiClient';
 import { ReviewDTO, ReviewCreateDTO, ReviewFilter, ReviewStats } from '../types/reviews';
 import { PageResponse } from '../types/api';
 
-const REVIEWS_URL = '/reviews';
-const PLACES_URL = '/places';
+// Update base URLs to include API prefix
+const API_PREFIX = '/api';
+const REVIEWS_URL = `${API_PREFIX}/reviews`;
+const PLACES_URL = `${API_PREFIX}/places`;
 
 /**
  * Get all reviews with pagination and filtering
@@ -12,35 +14,35 @@ const PLACES_URL = '/places';
 export const getReviews = async (
   filter: ReviewFilter = {}
 ): Promise<PageResponse<ReviewDTO>> => {
-  const { 
-    placeId, 
-    userId, 
-    minRating, 
-    maxRating, 
-    page = 0, 
+  const {
+    placeId,
+    userId,
+    minRating,
+    maxRating,
+    page = 0,
     size = 10,
     sortBy = 'timestamp',
     sortDir = 'desc'
   } = filter;
-  
+
   let url = `${REVIEWS_URL}?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
-  
+
   if (placeId) {
     url = `${PLACES_URL}/${placeId}/reviews?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
   }
-  
+
   if (userId) {
     url = `${REVIEWS_URL}/user/${userId}?page=${page}&size=${size}&sortBy=${sortBy}&sortDir=${sortDir}`;
   }
-  
+
   if (minRating !== undefined) {
     url += `&minRating=${minRating}`;
   }
-  
+
   if (maxRating !== undefined) {
     url += `&maxRating=${maxRating}`;
   }
-  
+
   return await get<PageResponse<ReviewDTO>>(url);
 };
 
@@ -54,8 +56,35 @@ export const getReviewById = async (id: number): Promise<ReviewDTO> => {
 /**
  * Create a new review
  */
-export const createReview = async (review: ReviewCreateDTO): Promise<ReviewDTO> => {
-  return await post<ReviewDTO>(REVIEWS_URL, review);
+// export const createReview = async (
+//   review: ReviewCreateDTO & { placeId: number }
+// ): Promise<ReviewDTO> => {
+//   return await post<ReviewDTO>(`${PLACES_URL}/${review.placeId}/reviews`, review);
+// };
+
+
+export const createReview = async (
+  review: ReviewCreateDTO & { placeId: number }
+): Promise<ReviewDTO> => {
+  // Use a hardcoded path for testing
+  const fullUrl = `http://localhost:8080/api/places/${review.placeId}/reviews`;
+  console.log('Attempting to post review to:', fullUrl);
+  // Use a direct fetch for testing instead of your post helper
+  const response = await fetch(fullUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(review),
+  });
+  
+  if (!response.ok) {
+    console.error('Error status:', response.status);
+    console.error('Error text:', await response.text());
+    throw new Error(`Request failed with status ${response.status}`);
+  }
+  
+  return await response.json();
 };
 
 /**
