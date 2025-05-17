@@ -206,4 +206,14 @@ public class PlacesController {
 
         return ResponseEntity.ok(reviewService.getReviewsByPlaceId(placeId, pageable));
     }
+
+    @PostMapping("/{placeId}/reviews")
+    public ResponseEntity<ReviewDTO> createReview(
+            @PathVariable Long placeId,
+            @RequestBody ReviewDTO reviewDTO // or ReviewCreateDTO if you have it
+    ) {
+        ReviewDTO createdReview = reviewService.createReview(placeId, reviewDTO);
+        return ResponseEntity.ok(createdReview);
+    }
+
 }
