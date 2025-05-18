@@ -19,7 +19,7 @@ interface ReviewsContextType {
   loadReviews: (newFilter?: Partial<ReviewFilter>) => Promise<void>;
   loadUserReview: (placeId: number) => Promise<void>;
   loadReviewStats: (placeId: number) => Promise<void>;
-  createReview: (review: ReviewCreateDTO) => Promise<ReviewDTO>;
+  createReview: (review: ReviewCreateDTO & { placeId: number }) => Promise<ReviewDTO>;
   updateReview: (id: number, review: Partial<ReviewCreateDTO>) => Promise<ReviewDTO>;
   deleteReview: (id: number) => Promise<void>;
   setFilter: (newFilter: Partial<ReviewFilter>) => void;
@@ -136,38 +136,40 @@ export const ReviewsProvider: React.FC<ReviewsProviderProps> = ({ children }) =>
   }, []);
 
   // Create a new review
-  const createNewReview = useCallback(async (review: ReviewCreateDTO): Promise<ReviewDTO> => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Add the current user's ID if not specified
-      if (!review.userId && user) {
-        review.userId = user.id;
+  const createNewReview = useCallback(
+    async (review: ReviewCreateDTO & { placeId: number }): Promise<ReviewDTO> => {
+      try {
+        setLoading(true);
+        setError(null);
+  
+        // Add the current user's ID if not specified
+        if (!review.userId && user) {
+          review.userId = user.id;
+        }
+  
+        const createdReview = await reviewsService.createReview(review);
+  
+        setReviews(prevReviews => [createdReview, ...prevReviews]);
+        setUserReview(createdReview);
+  
+        if (filter.placeId) {
+          await loadReviewStats(filter.placeId);
+        }
+  
+        return createdReview;
+      } catch (err) {
+        const errorMessage = err instanceof Error
+          ? err.message
+          : 'Failed to create review';
+        setError(errorMessage);
+        throw err;
+      } finally {
+        setLoading(false);
       }
-      
-      const createdReview = await reviewsService.createReview(review);
-      
-      // Update the reviews list and user review
-      setReviews(prevReviews => [createdReview, ...prevReviews]);
-      setUserReview(createdReview);
-      
-      // Reload review stats if the current filter has a placeId
-      if (filter.placeId) {
-        await loadReviewStats(filter.placeId);
-      }
-      
-      return createdReview;
-    } catch (err) {
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Failed to create review';
-      setError(errorMessage);
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  }, [user, filter.placeId, loadReviewStats]);
+    },
+    [user, filter.placeId, loadReviewStats]
+  );
+  
 
   // Update an existing review
   const updateExistingReview = useCallback(async (id: number, review: Partial<ReviewCreateDTO>): Promise<ReviewDTO> => {

@@ -55,9 +55,10 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ placeId }) => {
   
   // Handle form submission for new review
   const handleSubmitReview = async (reviewData: ReviewCreateDTO): Promise<void> => {
-    await createReview(reviewData);
+    await createReview({ ...reviewData, placeId }); 
     setShowReviewForm(false);
   };
+  
   
   // Handle form submission for edit review
   const handleUpdateReview = async (reviewData: ReviewCreateDTO): Promise<void> => {
