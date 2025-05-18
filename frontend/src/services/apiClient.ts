@@ -7,8 +7,14 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 
-// Base API URL - should match your backend
-const API_URL = "http://localhost:8080/api";
+// Determine if running in production (on Vercel) or locally
+const isProduction = window.location.hostname !== 'localhost' && 
+                    !window.location.hostname.includes('127.0.0.1');
+
+// Set the API URL based on environment
+const API_URL = isProduction 
+  ? "https://tourly-backend.onrender.com/api"
+  : "http://localhost:8080/api";
 
 // Generic API response type
 export interface ApiResponse<T> {
