@@ -3,6 +3,7 @@ import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { AxiosError } from 'axios';
+import { LoginRequest } from '../types/auth';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState<string>('');
@@ -33,7 +34,14 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      await login(username, password);
+      
+      // Create a LoginRequest object to pass to the login function
+      const credentials: LoginRequest = {
+        username,
+        password
+      };
+      
+      await login(credentials);
       navigate('/'); // Redirect to home page after login
     } catch (err) {
       const axiosError = err as AxiosError<{ message: string }>;

@@ -1,5 +1,5 @@
 // MapView.tsx - Create this new component to display the map
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Wrapper } from '@googlemaps/react-wrapper';
 
 interface PlaceLocation {

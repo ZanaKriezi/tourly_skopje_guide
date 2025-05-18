@@ -1,13 +1,13 @@
 import React from 'react';
 import Button from '../common/Button';
 import { Link } from 'react-router-dom';
-import { Place } from '../../types/places';
 import PlaceCard from '../places/PlaceCard';
+import { PlaceDTO } from '../../types/places';
 
 interface FeaturedPlacesProps {
   title: string;
   subtitle?: string;
-  places: Place[];
+  places: PlaceDTO[];
   limit?: number;
   showViewAll?: boolean;
   activeCategory?: string;

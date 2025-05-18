@@ -91,48 +91,7 @@ const Star: React.FC<StarProps> = ({ type, size }) => {
   );
 };
 
-// Review Card Component
-interface ReviewCardProps {
-  review: {
-    id?: number;
-    rating: number;
-    comment: string;
-    timestamp: string;
-    userName: string;
-  };
-}
 
-const ReviewCard: React.FC<ReviewCardProps> = ({ review }) => {
-  // Format date
-  const formatDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-    } catch (error) {
-      console.log("Error parsing date:", error);
-      return "Unknown date";
-    }
-  };
-
-  return (
-    <div className="bg-gray-50 p-4 rounded-lg mb-4">
-      <div className="flex justify-between mb-2">
-        <div className="font-medium">{review.userName || "Anonymous User"}</div>
-        <div className="text-gray-500 text-sm">
-          {formatDate(review.timestamp)}
-        </div>
-      </div>
-      <div className="mb-2">
-        <StarRating rating={review.rating} size="sm" />
-      </div>
-      <p className="text-gray-700">{review.comment || "No comment provided"}</p>
-    </div>
-  );
-};
 
 const PlaceDetailsPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -143,12 +102,9 @@ const PlaceDetailsPage: React.FC = () => {
     error,
     loadPlaceDetails,
     clearError,
-    loadPlaceReviews,
-    reviews,
-    reviewsPagination,
   } = usePlaces();
-  const [showAllReviews, setShowAllReviews] = React.useState<boolean>(false);
 
+  // Load place details on component mount
   useEffect(() => {
     if (id) {
       loadPlaceDetails(Number(id)).catch((error) => {
@@ -163,18 +119,6 @@ const PlaceDetailsPage: React.FC = () => {
     navigate(-1); // Go back to previous page
   };
 
-  // Handle viewing all reviews
-  const handleViewAllReviews = async (): Promise<void> => {
-    if (id) {
-      try {
-        await loadPlaceReviews(Number(id));
-        setShowAllReviews(true);
-      } catch (error) {
-        console.error("Error loading all reviews:", error);
-      }
-    }
-  };
-
   // Generate image URL from photo reference
   const getImageUrl = (): string => {
     if (selectedPlace?.photoReference) {
@@ -185,80 +129,6 @@ const PlaceDetailsPage: React.FC = () => {
     return "https://via.placeholder.com/800x400?text=No+Image+Available";
   };
 
-  // Render reviews section with error handling
-  const renderReviewsSection = () => {
-    if (error && showAllReviews) {
-      return (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Reviews</h2>
-          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-            <p className="text-red-700">
-              Sorry, we couldn't load reviews at this time. Please try again
-              later.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    if (showAllReviews && reviews.length > 0) {
-      // Show all reviews that were loaded
-      return (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">
-            All Reviews ({reviewsPagination.totalElements})
-          </h2>
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} />
-            ))}
-          </div>
-          <Button
-            variant="outline"
-            className="mt-4"
-            onClick={() => setShowAllReviews(false)}
-          >
-            Show Less
-          </Button>
-        </div>
-      );
-    }
-
-    // Show preview reviews from the place details
-    if (
-      !selectedPlace?.recentReviews ||
-      selectedPlace.recentReviews.length === 0
-    ) {
-      return (
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Reviews</h2>
-          <p className="text-gray-500 italic">
-            No reviews yet. Be the first to review!
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Reviews</h2>
-        <div className="space-y-4">
-          {selectedPlace.recentReviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
-          ))}
-
-          {selectedPlace.reviewCount > selectedPlace.recentReviews.length && (
-            <div className="text-center mt-4">
-              <Button variant="outline" onClick={handleViewAllReviews}>
-                See all {selectedPlace.reviewCount} reviews
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   if (loading) {
     return (
       <Container>
@@ -267,7 +137,7 @@ const PlaceDetailsPage: React.FC = () => {
     );
   }
 
-  if (error && !showAllReviews) {
+  if (error) {
     return (
       <Container>
         <ErrorMessage

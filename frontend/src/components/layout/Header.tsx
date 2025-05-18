@@ -42,7 +42,7 @@ const Header: React.FC = () => {
               </Link>
               
               <Link to="/register">
-                <Button variant="accent">
+                <Button>
                   Register
                 </Button>
               </Link>
