@@ -37,28 +37,58 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ placeId }) => {
   
   const [showReviewForm, setShowReviewForm] = useState<boolean>(false);
   const [editingReview, setEditingReview] = useState<ReviewDTO | null>(null);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
   
-  // Load reviews, user review, and stats on component mount
+  // Load reviews on component mount, with safeguards against infinite loops
   useEffect(() => {
-    const initReviews = async (): Promise<void> => {
-      setFilter({ placeId });
-      await loadReviews({ placeId });
-      await loadReviewStats(placeId);
-      
-      if (isAuthenticated && user) {
-        await loadUserReview(placeId);
+    // Skip if we've already initialized or if loading
+    if (isInitialized || loading) return;
+    
+    const initReviews = async () => {
+      try {
+        // Set filter with placeId
+        setFilter({ placeId });
+        
+        // Load reviews - this will now also calculate stats and find user review
+        await loadReviews({ placeId });
+        
+        // Process user review and stats client-side
+        if (isAuthenticated && user) {
+          loadUserReview(placeId);
+        }
+        
+        loadReviewStats(placeId);
+        
+        setIsInitialized(true);
+      } catch (error) {
+        console.error("Error initializing reviews:", error);
       }
     };
     
     initReviews();
-  }, [placeId, loadReviews, loadUserReview, loadReviewStats, setFilter, isAuthenticated, user]);
+  }, [
+    placeId, 
+    loadReviews, 
+    loadUserReview, 
+    loadReviewStats, 
+    setFilter, 
+    isAuthenticated, 
+    user, 
+    isInitialized, 
+    loading
+  ]);
+  
+  // Load new data when page or filter changes
+  useEffect(() => {
+    if (!isInitialized) return;
+    loadReviews();
+  }, [pagination.page, isInitialized, loadReviews]);
   
   // Handle form submission for new review
   const handleSubmitReview = async (reviewData: ReviewCreateDTO): Promise<void> => {
-    await createReview({ ...reviewData, placeId }); 
+    await createReview({ ...reviewData, placeId });
     setShowReviewForm(false);
   };
-  
   
   // Handle form submission for edit review
   const handleUpdateReview = async (reviewData: ReviewCreateDTO): Promise<void> => {
@@ -100,16 +130,16 @@ const ReviewsSection: React.FC<ReviewsSectionProps> = ({ placeId }) => {
       )}
       
       {/* Error message */}
-    {error && (
+      {error && (
         <ErrorMessage 
           message={error} 
           onRetry={() => {
             clearError();
             loadReviews({ placeId });
-            loadReviewStats(placeId);
             if (isAuthenticated && user) {
               loadUserReview(placeId);
             }
+            loadReviewStats(placeId);
           }} 
         />
       )}

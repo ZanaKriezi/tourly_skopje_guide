@@ -17,8 +17,8 @@ interface ReviewsContextType {
   loading: boolean;
   error: string | null;
   loadReviews: (newFilter?: Partial<ReviewFilter>) => Promise<void>;
-  loadUserReview: (placeId: number) => Promise<void>;
-  loadReviewStats: (placeId: number) => Promise<void>;
+  loadUserReview: (placeId: number) => void;
+  loadReviewStats: (placeId: number) => void;
   createReview: (review: ReviewCreateDTO & { placeId: number }) => Promise<ReviewDTO>;
   updateReview: (id: number, review: Partial<ReviewCreateDTO>) => Promise<ReviewDTO>;
   deleteReview: (id: number) => Promise<void>;
@@ -59,11 +59,18 @@ export const ReviewsProvider: React.FC<ReviewsProviderProps> = ({ children }) =>
   });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [lastErrorTime, setLastErrorTime] = useState<number>(0);
   
   const { user } = useAuth();
 
   // Load reviews based on filter
   const loadReviews = useCallback(async (newFilter?: Partial<ReviewFilter>): Promise<void> => {
+    // Don't attempt if we've had a recent error
+    if (error && Date.now() - lastErrorTime < 5000) return;
+    
+    // Don't reload if already loading
+    if (loading) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -85,91 +92,83 @@ export const ReviewsProvider: React.FC<ReviewsProviderProps> = ({ children }) =>
         totalPages: response.pagination.totalPages,
         totalElements: response.pagination.totalElements
       });
+      
+      // Now that we have reviews, calculate stats and find user review
+      if (user && currentFilter.placeId) {
+        // Find user review from loaded reviews
+        const foundUserReview = reviewsService.findUserReviewInList(response.content, user.id);
+        setUserReview(foundUserReview);
+        
+        // Calculate stats from all loaded reviews
+        const calculatedStats = reviewsService.calculateReviewStats(response.content);
+        setReviewStats(calculatedStats);
+      }
     } catch (err) {
       const errorMessage = err instanceof Error 
         ? err.message 
         : 'Failed to load reviews';
       setError(errorMessage);
+      setLastErrorTime(Date.now());
     } finally {
       setLoading(false);
     }
-  }, [filter]);
+  }, [filter, loading, error, lastErrorTime, user]);
 
-  // Load the current user's review for a place
-  const loadUserReview = useCallback(async (placeId: number): Promise<void> => {
+  // Load user review from the current reviews list
+  const loadUserReview = useCallback((): void => {
     if (!user) {
       setUserReview(null);
       return;
     }
     
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const review = await reviewsService.getUserReviewForPlace(placeId, user.id);
-      setUserReview(review);
-    } catch (err) {
-        console.error('Error loading user review:', err);
-      // If no review exists, set userReview to null
-      setUserReview(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+    // Find the user's review from the loaded reviews
+    const foundUserReview = reviewsService.findUserReviewInList(reviews, user.id);
+    setUserReview(foundUserReview);
+  }, [user, reviews]);
 
-  // Load review statistics for a place
-  const loadReviewStats = useCallback(async (placeId: number): Promise<void> => {
+  // Calculate review statistics from the reviews list
+  const loadReviewStats = useCallback((): void => {
+    // Calculate stats from all loaded reviews
+    const calculatedStats = reviewsService.calculateReviewStats(reviews);
+    setReviewStats(calculatedStats);
+  }, [reviews]);
+
+  // Create a new review
+  const createNewReview = useCallback(async (
+    review: ReviewCreateDTO & { placeId: number }
+  ): Promise<ReviewDTO> => {
     try {
       setLoading(true);
       setError(null);
       
-      const stats = await reviewsService.getReviewStats(placeId);
-      setReviewStats(stats);
+      // Add the current user's ID if not specified
+      if (!review.userId && user) {
+        review.userId = user.id;
+      }
+      
+      const createdReview = await reviewsService.createReview(review);
+      
+      // Update the reviews list and user review
+      setReviews(prevReviews => [createdReview, ...prevReviews]);
+      setUserReview(createdReview);
+      
+      // Update stats with the new review
+      const updatedReviews = [createdReview, ...reviews];
+      const calculatedStats = reviewsService.calculateReviewStats(updatedReviews);
+      setReviewStats(calculatedStats);
+      
+      return createdReview;
     } catch (err) {
       const errorMessage = err instanceof Error 
         ? err.message 
-        : 'Failed to load review statistics';
+        : 'Failed to create review';
       setError(errorMessage);
+      setLastErrorTime(Date.now());
+      throw err;
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Create a new review
-  const createNewReview = useCallback(
-    async (review: ReviewCreateDTO & { placeId: number }): Promise<ReviewDTO> => {
-      try {
-        setLoading(true);
-        setError(null);
-  
-        // Add the current user's ID if not specified
-        if (!review.userId && user) {
-          review.userId = user.id;
-        }
-  
-        const createdReview = await reviewsService.createReview(review);
-  
-        setReviews(prevReviews => [createdReview, ...prevReviews]);
-        setUserReview(createdReview);
-  
-        if (filter.placeId) {
-          await loadReviewStats(filter.placeId);
-        }
-  
-        return createdReview;
-      } catch (err) {
-        const errorMessage = err instanceof Error
-          ? err.message
-          : 'Failed to create review';
-        setError(errorMessage);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [user, filter.placeId, loadReviewStats]
-  );
-  
+  }, [user, reviews]);
 
   // Update an existing review
   const updateExistingReview = useCallback(async (id: number, review: Partial<ReviewCreateDTO>): Promise<ReviewDTO> => {
@@ -188,10 +187,10 @@ export const ReviewsProvider: React.FC<ReviewsProviderProps> = ({ children }) =>
         setUserReview(updatedReview);
       }
       
-      // Reload review stats if the current filter has a placeId
-      if (filter.placeId) {
-        await loadReviewStats(filter.placeId);
-      }
+      // Update stats with the updated review
+      const updatedReviews = reviews.map(r => r.id === id ? updatedReview : r);
+      const calculatedStats = reviewsService.calculateReviewStats(updatedReviews);
+      setReviewStats(calculatedStats);
       
       return updatedReview;
     } catch (err) {
@@ -199,11 +198,12 @@ export const ReviewsProvider: React.FC<ReviewsProviderProps> = ({ children }) =>
         ? err.message 
         : `Failed to update review with ID ${id}`;
       setError(errorMessage);
+      setLastErrorTime(Date.now());
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [userReview, filter.placeId, loadReviewStats]);
+  }, [userReview, reviews]);
 
   // Delete a review
   const deleteExistingReview = useCallback(async (id: number): Promise<void> => {
@@ -214,26 +214,27 @@ export const ReviewsProvider: React.FC<ReviewsProviderProps> = ({ children }) =>
       await reviewsService.deleteReview(id);
       
       // Update the reviews list and user review
-      setReviews(prevReviews => prevReviews.filter(r => r.id !== id));
+      const updatedReviews = reviews.filter(r => r.id !== id);
+      setReviews(updatedReviews);
       
       if (userReview?.id === id) {
         setUserReview(null);
       }
       
-      // Reload review stats if the current filter has a placeId
-      if (filter.placeId) {
-        await loadReviewStats(filter.placeId);
-      }
+      // Update stats after removing the review
+      const calculatedStats = reviewsService.calculateReviewStats(updatedReviews);
+      setReviewStats(calculatedStats);
     } catch (err) {
       const errorMessage = err instanceof Error 
         ? err.message 
         : `Failed to delete review with ID ${id}`;
       setError(errorMessage);
+      setLastErrorTime(Date.now());
       throw err;
     } finally {
       setLoading(false);
     }
-  }, [userReview, filter.placeId, loadReviewStats]);
+  }, [userReview, reviews]);
 
   // Set filter with pagination reset
   const setFilter = useCallback((newFilter: Partial<ReviewFilter>): void => {

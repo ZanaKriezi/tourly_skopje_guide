@@ -74,9 +74,11 @@ const Navbar: React.FC = () => {
             className="flex items-center space-x-2" 
             onClick={closeMenu}
           >
-            <div className="w-10 h-10 rounded-full bg-primary-500 flex items-center justify-center text-black">
-              <Map size={20} />
-            </div>
+            <img 
+              src="/logo.png" 
+              alt="Tourly Logo" 
+              className="w-10 h-10 object-contain"
+            />
             <span className={`font-display font-bold text-xl ${isScrolled ? 'text-gray-900' : 'text-black'}`}>
               Tourly
             </span>

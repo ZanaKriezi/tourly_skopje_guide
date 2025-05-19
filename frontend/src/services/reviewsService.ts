@@ -3,10 +3,8 @@ import { get, post, put, del } from './apiClient';
 import { ReviewDTO, ReviewCreateDTO, ReviewFilter, ReviewStats } from '../types/reviews';
 import { PageResponse } from '../types/api';
 
-// Update base URLs to include API prefix
-const API_PREFIX = '/api';
-const REVIEWS_URL = `${API_PREFIX}/reviews`;
-const PLACES_URL = `${API_PREFIX}/places`;
+const REVIEWS_URL = '/reviews';
+const PLACES_URL = '/places';
 
 /**
  * Get all reviews with pagination and filtering
@@ -56,35 +54,10 @@ export const getReviewById = async (id: number): Promise<ReviewDTO> => {
 /**
  * Create a new review
  */
-// export const createReview = async (
-//   review: ReviewCreateDTO & { placeId: number }
-// ): Promise<ReviewDTO> => {
-//   return await post<ReviewDTO>(`${PLACES_URL}/${review.placeId}/reviews`, review);
-// };
-
-
 export const createReview = async (
   review: ReviewCreateDTO & { placeId: number }
 ): Promise<ReviewDTO> => {
-  // Use a hardcoded path for testing
-  const fullUrl = `http://localhost:8080/api/places/${review.placeId}/reviews`;
-  console.log('Attempting to post review to:', fullUrl);
-  // Use a direct fetch for testing instead of your post helper
-  const response = await fetch(fullUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(review),
-  });
-  
-  if (!response.ok) {
-    console.error('Error status:', response.status);
-    console.error('Error text:', await response.text());
-    throw new Error(`Request failed with status ${response.status}`);
-  }
-  
-  return await response.json();
+  return await post<ReviewDTO>(`${PLACES_URL}/${review.placeId}/reviews`, review);
 };
 
 /**
@@ -102,21 +75,63 @@ export const deleteReview = async (id: number): Promise<void> => {
 };
 
 /**
- * Get review statistics for a place
+ * Calculate review statistics from a list of reviews
+ * This replaces the server-side endpoint that doesn't exist
  */
-export const getReviewStats = async (placeId: number): Promise<ReviewStats> => {
-  return await get<ReviewStats>(`${PLACES_URL}/${placeId}/reviews/stats`);
+export const calculateReviewStats = (reviews: ReviewDTO[]): ReviewStats => {
+  // Default empty stats
+  const emptyStats: ReviewStats = {
+    averageRating: 0,
+    totalReviews: 0,
+    ratingDistribution: {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0
+    }
+  };
+  
+  // If no reviews, return empty stats
+  if (!reviews || reviews.length === 0) {
+    return emptyStats;
+  }
+  
+  // Calculate total and distribution
+  const totalReviews = reviews.length;
+  const ratingDistribution = {
+    1: 0,
+    2: 0,
+    3: 0,
+    4: 0,
+    5: 0
+  };
+  
+  let ratingSum = 0;
+  
+  reviews.forEach(review => {
+    ratingSum += review.rating;
+    
+    // Ensure rating is a valid key (1-5)
+    const validRating = Math.min(Math.max(Math.round(review.rating), 1), 5);
+    ratingDistribution[validRating as 1|2|3|4|5]++;
+  });
+  
+  return {
+    averageRating: totalReviews > 0 ? ratingSum / totalReviews : 0,
+    totalReviews,
+    ratingDistribution
+  };
 };
 
 /**
- * Get current user's review for a place (if it exists)
+ * Find a user's review for a place from the reviews list
+ * This replaces the server-side endpoint that doesn't exist
  */
-export const getUserReviewForPlace = async (placeId: number, userId: number): Promise<ReviewDTO | null> => {
-  try {
-    return await get<ReviewDTO>(`${PLACES_URL}/${placeId}/reviews/user/${userId}`);
-  } catch (error) {
-    console.error('Error fetching user review:', error);
-    // If no review exists, return null
+export const findUserReviewInList = (reviews: ReviewDTO[], userId: number): ReviewDTO | null => {
+  if (!reviews || reviews.length === 0 || !userId) {
     return null;
   }
+  
+  return reviews.find(review => review.userId === userId) || null;
 };
