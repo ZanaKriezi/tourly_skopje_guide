@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { Menu, X, ChevronDown, User, LogOut, Map, Home, Book, Star } from 'lucide-react';
+import { Menu, X, ChevronDown, User, LogOut, Map, Home, Book } from 'lucide-react';
 
 const Navbar: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
