@@ -140,14 +140,7 @@ const Navbar: React.FC = () => {
                         <User size={16} className="mr-2" />
                         Profile
                       </Link>
-                      <Link
-                        to="/my-reviews"
-                        className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={closeDropdown}
-                      >
-                        <Star size={16} className="mr-2" />
-                        My Reviews
-                      </Link>
+                      
                       <hr className="my-1" />
                       <button
                         onClick={handleLogout}
@@ -225,10 +218,7 @@ const Navbar: React.FC = () => {
                     <User size={18} className="mr-2" />
                     Profile
                   </MobileNavLink>
-                  <MobileNavLink to="/my-reviews" active={isActive('/my-reviews')} onClick={closeMenu}>
-                    <Star size={18} className="mr-2" />
-                    My Reviews
-                  </MobileNavLink>
+                 
                   <button
                     onClick={handleLogout}
                     className="flex items-center w-full text-left px-3 py-2 text-danger-600 hover:bg-danger-50 rounded-md transition"
