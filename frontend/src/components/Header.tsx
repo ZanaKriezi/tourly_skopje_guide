@@ -15,7 +15,7 @@ const Header: React.FC = () => {
   return (
     <header className="bg-primary text-white p-4 shadow-md">
       <div className="container mx-auto flex justify-between items-center">
-        <Link to="/" className="font-montserrat text-2xl font-bold">Skopje Tourism Guide</Link>
+        <Link to="/" className="font-montserrat text-2xl font-bold">Tourly</Link>
         
         <div className="flex items-center space-x-4">
           {isAuthenticated ? (
