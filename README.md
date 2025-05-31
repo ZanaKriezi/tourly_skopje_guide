@@ -2,6 +2,8 @@
 
 **Tourly** is an AI-powered web platform for exploring Skopje, Macedonia. It helps locals and tourists discover attractions, restaurants, malls, and entertainment spots, with personalized recommendations and map-based navigation.
 
+This project was developed as part of a university group project.
+
 ## Quick Start
 
 ### Backend (Spring Boot)
